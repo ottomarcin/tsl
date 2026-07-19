@@ -1,0 +1,8 @@
+.docs
+CLAUDE.md
+node_modules
+dist
+coverage
+storybook-static
+.npm-cache
+*.tsbuildinfo
