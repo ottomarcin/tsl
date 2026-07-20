@@ -1,0 +1,134 @@
+.strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  width: 100%;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+  padding: 0 var(--space-6);
+  overflow-x: auto;
+}
+
+.cells {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 120px;
+  min-width: 100px;
+  padding: var(--space-1) var(--space-3);
+  flex-shrink: 0;
+}
+
+.flag-amber {
+  border-left: 2px solid var(--flag-amber);
+}
+.flag-amber .value {
+  color: var(--flag-amber);
+}
+
+.flag-red {
+  border-left: 2px solid var(--flag-red);
+}
+.flag-red .value {
+  color: var(--flag-red);
+}
+
+.flag-normal .value {
+  color: var(--text-primary);
+}
+
+.ticks {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+.tick {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 4px;
+  background: var(--text-muted);
+  opacity: 0.3;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-mono-sm);
+  line-height: var(--line-height-mono-sm);
+  color: var(--text-muted);
+}
+
+.value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-mono-lg);
+  line-height: var(--line-height-mono-lg);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.alertIcon {
+  color: var(--flag-red);
+  flex-shrink: 0;
+}
+
+.unit {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-mono-sm);
+  line-height: var(--line-height-mono-sm);
+  color: var(--text-muted);
+}
+
+.trailing {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  flex-shrink: 0;
+  padding-left: var(--space-6);
+}
+
+.timestamp {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-mono);
+  line-height: var(--line-height-mono);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .strip {
+    height: 80px;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-4);
+  }
+
+  .cells {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
+
+  .cell {
+    scroll-snap-align: start;
+  }
+
+  .trailing {
+    justify-content: space-between;
+    padding-left: 0;
+  }
+}

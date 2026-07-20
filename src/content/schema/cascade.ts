@@ -7,6 +7,8 @@ export interface CascadeWaypoint {
 export interface CascadeBranch {
   /** Generic id, e.g. 'K' for TLS. */
   id: string;
+  /** Display label, e.g. 'K⁺' — for legends/minimaps, not used for lookups. */
+  label: string;
   /** CSS custom property name, e.g. '--mol-K' — a token reference, never a raw hex. */
   colorToken: string;
   waypoints: CascadeWaypoint[];

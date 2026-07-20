@@ -1,0 +1,57 @@
+.sceneLayout {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+.mainArea {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.canvasArea {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.themeToggleFloating {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: var(--z-persistent-ui);
+}
+
+.minimapFloating {
+  position: absolute;
+  top: 24px;
+  right: 80px;
+  z-index: var(--z-persistent-ui);
+}
+
+.colorLegendFloating {
+  position: absolute;
+  left: 32px;
+  bottom: 24px;
+  z-index: var(--z-persistent-ui);
+}
+
+.firstRunHintFloating {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: var(--z-persistent-ui);
+}
+
+.endPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+}

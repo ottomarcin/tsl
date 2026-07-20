@@ -1,0 +1,21 @@
+.panel {
+  width: 180px;
+  height: 220px;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.highlighted {
+  filter: drop-shadow(0 0 3px var(--monitor-trace));
+}
+
+@media (max-width: 767px) {
+  .panel {
+    width: 140px;
+    height: 170px;
+  }
+}

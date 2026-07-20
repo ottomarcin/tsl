@@ -5,18 +5,21 @@ export const tlsCascade: CascadeTopology = {
   branches: [
     {
       id: 'K',
+      label: 'K⁺',
       colorToken: '--mol-K',
       // Short, direct path straight to cardiac myocytes — no intermediate waypoints.
       waypoints: [{ t: 1.0, label: 'Cardiac myocytes' }],
     },
     {
       id: 'PO4',
+      label: 'PO₄',
       colorToken: '--mol-PO4',
       // Midway, the stream intersects and depletes the calcium reservoir.
       waypoints: [{ t: 0.5, label: 'Calcium pool' }],
     },
     {
       id: 'purines',
+      label: 'Purines',
       colorToken: '--mol-purines',
       // Hypoxanthine → XO → Xanthine → XO → Uric acid, per asset spec §4.2's waypoint schema.
       waypoints: [
