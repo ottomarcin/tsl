@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
-import { Ray, Vector3 } from 'three';
+import { Ray, Raycaster, Vector3, type Object3D } from 'three';
 import { fakeCellGltf } from '../../test/fakeModel';
 import { BURST_AMOUNT_ATTRIBUTE } from '../../graphics/burstMaterial';
 import { ParticleBurst } from '../../graphics/ParticleBurst';
@@ -240,9 +240,48 @@ describe('Wavefront dragging', () => {
     expect(document.body.style.cursor).toBe('');
   });
 
-  it('cannot be grabbed once the bar has faded out', async () => {
-    const { hit } = await mountDraggable(0);
+  it('cannot be grabbed once the bar has faded out: not visible, and not hit by the pointer ray either', async () => {
+    const { renderer, hit, handlers } = await mountDraggable(0);
     expect((hit.instance as { visible: boolean }).visible).toBe(false);
+    // three's raycaster ignores `visible`, so the strip must opt out of raycasting itself.
+    const strip = hit.instance as unknown as Object3D;
+    strip.updateMatrixWorld(true);
+    const raycaster = new Raycaster(new Vector3(strip.position.x, 0, 10), new Vector3(0, 0, -1));
+    expect(raycaster.intersectObject(strip)).toHaveLength(0);
+    void renderer;
+    void handlers;
+  });
+
+  it('is hit by the pointer ray while the bar is visible', async () => {
+    const { hit } = await mountDraggable(1);
+    const strip = hit.instance as unknown as Object3D;
+    strip.updateMatrixWorld(true);
+    const raycaster = new Raycaster(new Vector3(strip.position.x, 0, 10), new Vector3(0, 0, -1));
+    expect(raycaster.intersectObject(strip).length).toBeGreaterThan(0);
+  });
+
+  it('becomes grabbable again when the bar returns, and drops an in-progress drag if it fades away', async () => {
+    let opacity = 1;
+    const handlers = { onDragStart: vi.fn(), onDrag: vi.fn(), onDragEnd: vi.fn() };
+    const renderer = await ReactThreeTestRenderer.create(<Wavefront getX={() => 1} getOpacity={() => opacity} draggable {...handlers} />);
+    await ReactThreeTestRenderer.act(async () => {
+      await renderer.advanceFrames(1, 16);
+    });
+    const hit = renderer.scene.children[1];
+    await renderer.fireEvent(hit, 'pointerOver', event(1));
+    await renderer.fireEvent(hit, 'pointerDown', event(1));
+    expect(document.body.style.cursor).toBe('grabbing');
+    opacity = 0;
+    await ReactThreeTestRenderer.act(async () => {
+      await renderer.advanceFrames(1, 16);
+    });
+    expect(handlers.onDragEnd).toHaveBeenCalledTimes(1);
+    expect(document.body.style.cursor).toBe('');
+    opacity = 1;
+    await ReactThreeTestRenderer.act(async () => {
+      await renderer.advanceFrames(1, 16);
+    });
+    expect((hit.instance as { visible: boolean }).visible).toBe(true);
   });
 
   it('keeps the grab strip glued to the bar', async () => {
@@ -353,5 +392,45 @@ describe('CellMass', () => {
       await still.advanceFrames(40, 100);
     });
     expect(read(still)).toBeCloseTo(b, 9);
+  });
+});
+
+describe('TumorStage: the wavefront is only a control while the wave is on screen', () => {
+  const mount = async () => {
+    useModel.mockImplementation(pending);
+    const scrollToSceneProgress = vi.fn();
+    useAppStore.setState({ scrollApi: { scrollToPage: vi.fn(), scrollBy: vi.fn(), scrollToSceneProgress }, globalProgress: 0 });
+    const renderer = await ReactThreeTestRenderer.create(<TumorStage />);
+    return { renderer, scrollToSceneProgress, hit: renderer.scene.children.filter((c) => c.type === 'Mesh').at(-1)! };
+  };
+  /** Casts a straight-down ray at the strip's current x, after bringing its world matrix up to date (the test renderer has no render pass to do it). */
+  const hits = (hit: { instance: unknown }) => {
+    const strip = hit.instance as Object3D;
+    strip.updateMatrixWorld(true);
+    return new Raycaster(new Vector3(strip.position.x, 0, 10), new Vector3(0, 0, -1)).intersectObject(strip).length;
+  };
+
+  it.each([
+    ['Scene 0 (the strip waits at the far left)', 0.5],
+    ['the end of Scene 1, after the wave', 1.95],
+    ['Scene 2', 2.5],
+    ['Scene 3 (the strip waits at the far right)', 3.5],
+  ])('a click on the strip\'s resting place does not scrub the story: %s', async (_name, g) => {
+    const { renderer, scrollToSceneProgress, hit } = await mount();
+    useAppStore.setState({ globalProgress: g });
+    await ReactThreeTestRenderer.act(async () => {
+      await renderer.advanceFrames(2, 16);
+    });
+    expect(hits(hit)).toBe(0);
+    expect(scrollToSceneProgress).not.toHaveBeenCalled();
+  });
+
+  it('is grabbable while the wave sweeps (Scene 1, mid-wave)', async () => {
+    const { renderer, hit } = await mount();
+    useAppStore.setState({ globalProgress: 1.4 });
+    await ReactThreeTestRenderer.act(async () => {
+      await renderer.advanceFrames(2, 16);
+    });
+    expect(hits(hit)).toBeGreaterThan(0);
   });
 });

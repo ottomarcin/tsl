@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { WAVE_PLANE_Z } from '../lib/cytolysis';
-import { AdditiveBlending, NormalBlending, Plane, ShaderMaterial, Vector3, type Mesh } from 'three';
+import { AdditiveBlending, Mesh as ThreeMesh, NormalBlending, Plane, ShaderMaterial, Vector3, type Mesh } from 'three';
 
 export interface WavefrontProps {
   /** Current world-space x of the leading edge. */
@@ -65,6 +65,10 @@ const fragmentShader = /* glsl */ `
   }
 `;
 
+/** Below this the bar is too faint to be a control. */
+const GRAB_MIN_OPACITY = 0.3;
+const noRaycast = () => {};
+
 const plane = new Plane(new Vector3(0, 0, 1), -WAVE_PLANE_Z);
 const hitPoint = new Vector3();
 
@@ -123,8 +127,20 @@ export function Wavefront({
     material.uniforms.u_active.value = s.active;
     if (hit.current) {
       hit.current.position.x = x - 0.35;
-      // Not grabbable while the bar is faded out.
-      hit.current.visible = draggable && opacity > 0.3;
+      // Not grabbable while the bar is faded out. `visible = false` is not enough: three's raycaster, and so R3F's
+      // pointer events, still hit invisible meshes. The strip would otherwise sit, unseen, at the end of the bar's
+      // sweep in every scene (left edge before the wave, right edge after it) and a click on it would scrub the story.
+      const grabbable = draggable && opacity > GRAB_MIN_OPACITY;
+      hit.current.visible = grabbable;
+      hit.current.raycast = grabbable ? ThreeMesh.prototype.raycast : noRaycast;
+      if (!grabbable && (state.current.hover || state.current.dragging)) {
+        state.current.hover = false;
+        if (state.current.dragging) {
+          state.current.dragging = false;
+          onDragEnd?.();
+        }
+        setCursor('');
+      }
     }
   });
 
