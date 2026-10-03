@@ -45,11 +45,15 @@ export function ScrollProgressSync() {
       scrollBy: (deltaY: number) => {
         scroll.el.scrollTop += deltaY;
       },
-      scrollToSceneProgress: (page: number, progress: number) => {
+      scrollToSceneProgress: (page: number, progress: number, smooth = false) => {
         const el = scroll.el;
         const max = el.scrollHeight - el.clientHeight;
         if (max <= 0) return;
         const offset = (page + progress) / SCENE_COUNT;
+        if (smooth) {
+          el.scrollTo({ top: offset * max, behavior: 'smooth' });
+          return;
+        }
         el.scrollTop = offset * max;
         cutTo(offset);
       },

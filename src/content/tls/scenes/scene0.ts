@@ -10,6 +10,7 @@ export const scene0: SceneDefinition = {
     {
       id: 'scene-0-step-1',
       order: 1,
+      title: 'Tumor profile',
       caption: 'A bulky, chemosensitive tumor: high cell turnover, high nucleic-acid content.',
       timestamp: 'T+0h',
       labValues: [
@@ -28,6 +29,7 @@ export const scene0: SceneDefinition = {
     {
       id: 'scene-0-step-2',
       order: 2,
+      title: 'Risk factors',
       caption: 'Risk is quantifiable: tumor burden, LDH, renal function, hydration, high-risk diagnoses.',
       learnMore: {
         heading: 'The Cairo-Bishop framework',
@@ -38,6 +40,7 @@ export const scene0: SceneDefinition = {
     {
       id: 'scene-0-step-3',
       order: 3,
+      title: 'High risk',
       caption: 'This patient: high-grade lymphoma, elevated LDH, normal baseline renal function. High risk.',
       learnMore: {
         heading: 'What "high risk" means clinically',

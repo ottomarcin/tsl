@@ -10,6 +10,7 @@ export const scene3: SceneDefinition = {
     {
       id: 'scene-3-step-1',
       order: 1,
+      title: 'Crystals arrive',
       caption: "Crystals arrive at the nephron, the kidney's filtering unit.",
       timestamp: 'T+30h',
       labValues: [{ metricId: 'Cr', value: 0.9 }],
@@ -22,6 +23,7 @@ export const scene3: SceneDefinition = {
     {
       id: 'scene-3-step-2',
       order: 2,
+      title: 'Crystals lodge',
       caption: 'Crystals lodge in the tubule lumen. Flow narrows.',
       timestamp: 'T+36h',
       labValues: [{ metricId: 'Cr', value: 1.4 }],
@@ -34,6 +36,7 @@ export const scene3: SceneDefinition = {
     {
       id: 'scene-3-step-3',
       order: 3,
+      title: 'Four mechanisms',
       caption:
         'Obstruction is only part of it. Crystals injure tubular cells directly, vasoconstriction reduces flow, and histones from lysed cells damage endothelium.',
       timestamp: 'T+42h',
@@ -47,6 +50,7 @@ export const scene3: SceneDefinition = {
     {
       id: 'scene-3-step-4',
       order: 4,
+      title: 'Feedback loop',
       caption: 'Acute kidney injury. The kidney can no longer clear the very things causing it.',
       timestamp: 'T+48h',
       labValues: [

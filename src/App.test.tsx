@@ -38,6 +38,9 @@ async function setUpApp(webglSupported: boolean) {
   return { App, useAppStore };
 }
 
+// Step captions also appear in the side menu now, so the caption block is queried on its own.
+const inCaption = () => within(screen.getByRole('region', { name: 'Scene caption' }));
+
 describe('App', () => {
   beforeEach(() => {
     window.history.replaceState(null, '', '/');
@@ -188,6 +191,39 @@ describe('App', () => {
     });
   });
 
+  describe('side menu steps', () => {
+    it('lists each step of the current scene with a short title, as buttons, and highlights the active one', async () => {
+      window.history.replaceState(null, '', '/scene/2');
+      const { App, useAppStore } = await setUpApp(true);
+      render(<App />);
+      await act(async () => {
+        useAppStore.getState().setSceneProgress(0.35);
+      });
+      const nav = screen.getByRole('navigation', { name: 'Scene navigation' });
+      const steps = within(nav).getByRole('list', { name: 'The cascade steps' });
+      const buttons = within(steps).getAllByRole('button');
+      expect(buttons).toHaveLength(4);
+      expect(buttons[1]).toHaveAttribute('aria-current', 'step');
+      expect(buttons[0]).not.toHaveAttribute('aria-current');
+      expect(buttons[1]).toHaveTextContent('2.2');
+      expect(buttons[1]).toHaveTextContent(tlsContent.scenes[2].steps[1].title!);
+      expect(buttons[1]).not.toHaveTextContent(tlsContent.scenes[2].steps[1].caption);
+      expect(buttons[1]).toHaveAttribute('title', tlsContent.scenes[2].steps[1].caption);
+    });
+
+    it('clicking a step scrolls the story to it', async () => {
+      window.history.replaceState(null, '', '/scene/3');
+      const { App, useAppStore } = await setUpApp(true);
+      render(<App />);
+      const scrollToSceneProgress = vi.fn();
+      await act(async () => {
+        useAppStore.getState().registerScrollApi({ scrollToPage: vi.fn(), scrollBy: vi.fn(), scrollToSceneProgress });
+      });
+      await userEvent.click(screen.getByRole('button', { name: /^3\.3 / }));
+      expect(scrollToSceneProgress).toHaveBeenCalledWith(3, 0.625, true);
+    });
+  });
+
   describe('Scene 3 step bindings and the mechanism toggle', () => {
     async function openScene3AtProgress(progress: number) {
       window.history.replaceState(null, '', '/scene/3');
@@ -202,7 +238,7 @@ describe('App', () => {
 
     it('step 3.1: creatinine is still normal (the labs lag the mechanism) at T+30h', async () => {
       const { useAppStore } = await openScene3AtProgress(0.1);
-      expect(screen.getByText(steps[0].caption)).toBeInTheDocument();
+      expect(inCaption().getByText(steps[0].caption)).toBeInTheDocument();
       expect(useAppStore.getState().labValues.Cr).toBe(0.9);
       expect(screen.getAllByText('T+30h').length).toBeGreaterThan(0);
     });
@@ -268,25 +304,25 @@ describe('App', () => {
 
     it('step 2.1: potassium climbs to 5.8 and the earlier scenes\' labs carry over', async () => {
       const { useAppStore } = await openScene2AtProgress(0.1);
-      expect(screen.getByText(steps[0].caption)).toBeInTheDocument();
+      expect(inCaption().getByText(steps[0].caption)).toBeInTheDocument();
       expect(useAppStore.getState().labValues).toMatchObject({ K: 5.8, PO4: 5.5, UA: 7.8, Ca: 9.4 });
     });
 
     it('step 2.2: phosphate rises and calcium falls (the inversion)', async () => {
       const { useAppStore } = await openScene2AtProgress(0.35);
-      expect(screen.getByText(steps[1].caption)).toBeInTheDocument();
+      expect(inCaption().getByText(steps[1].caption)).toBeInTheDocument();
       expect(useAppStore.getState().labValues).toMatchObject({ PO4: 6.2, Ca: 7.8, K: 5.8 });
     });
 
     it('step 2.3: uric acid reaches 9.5', async () => {
       const { useAppStore } = await openScene2AtProgress(0.6);
-      expect(screen.getByText(steps[2].caption)).toBeInTheDocument();
+      expect(inCaption().getByText(steps[2].caption)).toBeInTheDocument();
       expect(useAppStore.getState().labValues.UA).toBe(9.5);
     });
 
     it('step 2.4: all three are flagged at T+24h', async () => {
       const { useAppStore } = await openScene2AtProgress(0.9);
-      expect(screen.getByText(steps[3].caption)).toBeInTheDocument();
+      expect(inCaption().getByText(steps[3].caption)).toBeInTheDocument();
       expect(useAppStore.getState().labValues).toMatchObject({ Ca: 7.6, PO4: 6.5, UA: 10.2 });
       expect(screen.getAllByText('T+24h').length).toBeGreaterThan(0);
     });
@@ -331,7 +367,7 @@ describe('App', () => {
 
     it('step 1.1: K⁺ ticks up to 4.6 at T+6h, no chips or badge', async () => {
       const { useAppStore } = await openScene1AtProgress(0.1);
-      expect(screen.getByText(steps[0].caption)).toBeInTheDocument();
+      expect(inCaption().getByText(steps[0].caption)).toBeInTheDocument();
       expect(useAppStore.getState().labValues.K).toBe(4.6);
       expect(screen.getAllByText('T+6h').length).toBeGreaterThan(0);
       expect(screen.queryByTestId('chip-slot-ldh')).not.toBeInTheDocument();
@@ -339,14 +375,14 @@ describe('App', () => {
 
     it('step 1.2: K⁺, PO₄ and uric acid jump at T+12h', async () => {
       const { useAppStore } = await openScene1AtProgress(0.5);
-      expect(screen.getByText(steps[1].caption)).toBeInTheDocument();
+      expect(inCaption().getByText(steps[1].caption)).toBeInTheDocument();
       expect(useAppStore.getState().labValues).toMatchObject({ K: 5.5, PO4: 5.5, UA: 7.8 });
       expect(screen.getAllByText('T+12h').length).toBeGreaterThan(0);
     });
 
     it('step 1.3: keeps the step 1.2 values and timestamp (labs continue, nothing is reset)', async () => {
       const { useAppStore } = await openScene1AtProgress(0.9);
-      expect(screen.getByText(steps[2].caption)).toBeInTheDocument();
+      expect(inCaption().getByText(steps[2].caption)).toBeInTheDocument();
       expect(useAppStore.getState().labValues).toMatchObject({ K: 5.5, PO4: 5.5, UA: 7.8 });
       expect(screen.getAllByText('T+12h').length).toBeGreaterThan(0);
     });
@@ -382,7 +418,7 @@ describe('App', () => {
 
     it('step 0.1: shows its caption and baseline labs; chips and badge are not revealed', async () => {
       const { useAppStore } = await openScene0AtProgress(0.1);
-      expect(screen.getByText(steps[0].caption)).toBeInTheDocument();
+      expect(inCaption().getByText(steps[0].caption)).toBeInTheDocument();
       expect(useAppStore.getState().labValues).toMatchObject({ K: 4.2, Cr: 0.9 });
       expect(screen.getByTestId('chip-slot-ldh')).toHaveAttribute('aria-hidden', 'true');
       expect(screen.getByRole('status', { hidden: true })).toHaveAttribute('data-visible', 'false');
@@ -390,15 +426,15 @@ describe('App', () => {
 
     it('step 0.2: swaps the caption and reveals the seven chips', async () => {
       await openScene0AtProgress(0.5);
-      expect(screen.getByText(steps[1].caption)).toBeInTheDocument();
-      expect(screen.queryByText(steps[0].caption)).not.toBeInTheDocument();
+      expect(inCaption().getByText(steps[1].caption)).toBeInTheDocument();
+      expect(inCaption().queryByText(steps[0].caption)).not.toBeInTheDocument();
       expect(screen.getByTestId('chip-slot-ldh')).toHaveAttribute('aria-hidden', 'false');
       expect(screen.getByRole('status', { hidden: true })).toHaveAttribute('data-visible', 'false');
     });
 
     it('step 0.3: consolidates the chips into the HIGH RISK badge', async () => {
       await openScene0AtProgress(0.9);
-      expect(screen.getByText(steps[2].caption)).toBeInTheDocument();
+      expect(inCaption().getByText(steps[2].caption)).toBeInTheDocument();
       expect(screen.getByTestId('chip-slot-ldh')).toHaveAttribute('aria-hidden', 'true');
       expect(screen.getByRole('status')).toHaveTextContent('HIGH RISK');
     });

@@ -10,7 +10,7 @@ export interface ScrollApi {
   /** `smooth` animates the scroll (nav clicks); otherwise the position jumps (deep links, back/forward). */
   scrollToPage: (page: number, smooth?: boolean) => void;
   /** Instantly scrolls to `progress` (0–1) within scene `page`. Used when something in the scene is dragged. */
-  scrollToSceneProgress: (page: number, progress: number) => void;
+  scrollToSceneProgress: (page: number, progress: number, smooth?: boolean) => void;
   /** Scrolls the experience by `deltaY` pixels, as if the wheel had turned over the scene itself. */
   scrollBy: (deltaY: number) => void;
 }
@@ -39,6 +39,8 @@ export interface AppState {
 
 export interface AppActions {
   /** `progress` seeds the new scene's 0–1 progress (scroll-driven jumps know it); otherwise it starts at 0. */
+  /** Moves the story to the middle of a step of a scene: smoothly, or in one cut under reduced motion. */
+  jumpToStep: (sceneIndex: number, stepIndex: number, stepCount: number) => void;
   jumpToScene: (index: number, opts?: { source?: JumpSource; progress?: number }) => void;
   goToLanding: () => void;
   goToEnd: () => void;

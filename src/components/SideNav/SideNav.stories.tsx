@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { SideNav } from './SideNav';
 
 const scenes = [
-  { index: 0, title: 'Risk', subSteps: ['0.1 Profile', '0.2 Factors', '0.3 Risk'] },
+  { index: 0, title: 'Risk', subSteps: [{ label: '0.1', title: 'Tumor profile', caption: 'A bulky, chemosensitive tumor: high cell turnover' }, { label: '0.2', title: 'Risk factors', caption: 'Risk is quantifiable: tumor burden, LDH, renal function' }, { label: '0.3', title: 'High risk', caption: 'This patient: high-grade lymphoma. High risk.' }] },
   { index: 1, title: 'Cytolysis' },
   { index: 2, title: 'Cascade' },
   { index: 3, title: 'Renal' },

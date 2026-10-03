@@ -37,6 +37,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
   },
 
+  jumpToStep(sceneIndex: number, stepIndex: number, stepCount: number) {
+    // Middle of the step's band: far enough in that the step is unambiguously the active one.
+    const progress = (stepIndex + 0.5) / Math.max(1, stepCount);
+    get().scrollApi?.scrollToSceneProgress(sceneIndex, progress, !get().reducedMotion);
+  },
+
   goToLanding() {
     set({ route: { kind: 'landing' }, routeSource: 'nav', sceneProgress: 0 });
   },

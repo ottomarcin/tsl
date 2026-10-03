@@ -2,11 +2,20 @@ import { Check, ChevronsLeft, ChevronsRight, Circle } from 'lucide-react';
 import { Modal } from '../Modal/Modal';
 import styles from './SideNav.module.css';
 
+export interface SideNavSubStep {
+  /** Short number such as "2.3". */
+  label: string;
+  /** A two-to-three-word name, shown beside the number. */
+  title: string;
+  /** What the step says in full: the tooltip. */
+  caption?: string;
+}
+
 export interface SideNavSceneItem {
   index: number;
   title: string;
   /** Only rendered for the current scene. */
-  subSteps?: string[];
+  subSteps?: SideNavSubStep[];
 }
 
 export interface SideNavProps {
@@ -18,6 +27,10 @@ export interface SideNavProps {
   onJumpToScene: (index: number) => void;
   onJumpToLanding: () => void;
   onJumpToEnd: () => void;
+  /** Index of the step the viewer is on within the current scene. */
+  currentStepIndex?: number;
+  /** Jump to a step of the current scene. When omitted the steps are shown but not clickable. */
+  onJumpToStep?: (sceneIndex: number, stepIndex: number) => void;
   variant?: 'rail' | 'sheet';
   sheetOpen?: boolean;
   onSheetOpenChange?: (open: boolean) => void;
@@ -34,10 +47,15 @@ function itemIcon(state: ItemState) {
 function SideNavContent({
   scenes,
   currentSceneIndex,
+  currentStepIndex = 0,
   onJumpToScene,
   onJumpToLanding,
   onJumpToEnd,
-}: Pick<SideNavProps, 'scenes' | 'currentSceneIndex' | 'onJumpToScene' | 'onJumpToLanding' | 'onJumpToEnd'>) {
+  onJumpToStep,
+}: Pick<
+  SideNavProps,
+  'scenes' | 'currentSceneIndex' | 'currentStepIndex' | 'onJumpToScene' | 'onJumpToLanding' | 'onJumpToEnd' | 'onJumpToStep'
+>) {
   const landingState: ItemState = currentSceneIndex > -1 ? 'completed' : 'current';
   const endState: ItemState = currentSceneIndex === scenes.length ? 'current' : 'future';
 
@@ -64,12 +82,36 @@ function SideNavContent({
               <span className={styles.itemTitle}>{scene.title}</span>
             </button>
             {state === 'current' && scene.subSteps && scene.subSteps.length > 0 && (
-              <ul className={styles.subList}>
-                {scene.subSteps.map((label, i) => (
-                  <li key={i} className={styles.subItem}>
-                    {label}
-                  </li>
-                ))}
+              <ul className={styles.subList} aria-label={`${scene.title} steps`}>
+                {scene.subSteps.map((step, i) => {
+                  const stepState: ItemState = i < currentStepIndex ? 'completed' : i === currentStepIndex ? 'current' : 'future';
+                  const body = (
+                    <>
+                      <span className={styles.subNumber}>{step.label}</span>
+                      <span className={styles.subCaption}>{step.title}</span>
+                    </>
+                  );
+                  return (
+                    <li key={i}>
+                      {onJumpToStep ? (
+                        <button
+                          type="button"
+                          className={[styles.subItem, styles[`sub_${stepState}`]].join(' ')}
+                          aria-current={stepState === 'current' ? 'step' : undefined}
+                          aria-label={`${step.label} ${step.title}`}
+                          title={step.caption ?? step.title}
+                          onClick={() => onJumpToStep(scene.index, i)}
+                        >
+                          {body}
+                        </button>
+                      ) : (
+                        <span className={[styles.subItem, styles[`sub_${stepState}`]].join(' ')} title={step.caption ?? step.title}>
+                          {body}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </li>
@@ -94,6 +136,8 @@ export function SideNav({
   onJumpToScene,
   onJumpToLanding,
   onJumpToEnd,
+  currentStepIndex,
+  onJumpToStep,
   variant = 'rail',
   sheetOpen = false,
   onSheetOpenChange,
@@ -104,9 +148,11 @@ export function SideNav({
         <SideNavContent
           scenes={scenes}
           currentSceneIndex={currentSceneIndex}
+          currentStepIndex={currentStepIndex}
           onJumpToScene={onJumpToScene}
           onJumpToLanding={onJumpToLanding}
           onJumpToEnd={onJumpToEnd}
+          onJumpToStep={onJumpToStep}
         />
       </Modal>
     );
@@ -119,9 +165,11 @@ export function SideNav({
         <SideNavContent
           scenes={scenes}
           currentSceneIndex={currentSceneIndex}
+          currentStepIndex={currentStepIndex}
           onJumpToScene={onJumpToScene}
           onJumpToLanding={onJumpToLanding}
           onJumpToEnd={onJumpToEnd}
+          onJumpToStep={onJumpToStep}
         />
       )}
       <button

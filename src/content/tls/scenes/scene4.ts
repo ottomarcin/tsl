@@ -10,6 +10,7 @@ export const scene4: SceneDefinition = {
     {
       id: 'scene-4-step-1',
       order: 1,
+      title: 'Same origin',
       caption: 'Both consequences trace back to the same moment of lysis. Different paths, same patient, same time.',
       timestamp: 'T+48h',
       labValues: [
@@ -28,6 +29,7 @@ export const scene4: SceneDefinition = {
     {
       id: 'scene-4-step-2',
       order: 2,
+      title: 'Hyperkalemia',
       caption: 'Hyperkalemia: the most acutely lethal, the most reversible if caught.',
       learnMore: {
         heading: 'ECG progression — pattern, not precise thresholds',
@@ -38,6 +40,7 @@ export const scene4: SceneDefinition = {
     {
       id: 'scene-4-step-3',
       order: 3,
+      title: 'Hypocalcemia',
       caption: 'Hypocalcemia: neuromuscular irritability from the same lysis event, via phosphate.',
       learnMore: {
         heading: 'Neuromuscular manifestations',
@@ -48,6 +51,7 @@ export const scene4: SceneDefinition = {
     {
       id: 'scene-4-step-4',
       order: 4,
+      title: 'Two clocks',
       caption: 'Two clocks, one cause. Both need attention now.',
       timestamp: 'T+48h',
       learnMore: {

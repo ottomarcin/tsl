@@ -11,6 +11,7 @@ export const scene2: SceneDefinition = {
     {
       id: 'scene-2-step-1',
       order: 1,
+      title: 'Potassium',
       caption: 'Potassium needs no conversion. It goes straight to where it is dangerous.',
       labValues: [{ metricId: 'K', value: 5.8 }],
       learnMore: {
@@ -22,6 +23,7 @@ export const scene2: SceneDefinition = {
     {
       id: 'scene-2-step-2',
       order: 2,
+      title: 'Phosphate and calcium',
       caption: 'Phosphate does not act alone. It needs a partner.',
       labValues: [
         { metricId: 'PO4', value: 6.2 },
@@ -36,6 +38,7 @@ export const scene2: SceneDefinition = {
     {
       id: 'scene-2-step-3',
       order: 3,
+      title: 'Purine pathway',
       caption: 'Nucleic acids take the longest road, but end at the same place.',
       labValues: [{ metricId: 'UA', value: 9.5 }],
       learnMore: {
@@ -47,6 +50,7 @@ export const scene2: SceneDefinition = {
     {
       id: 'scene-2-step-4',
       order: 4,
+      title: 'Convergence',
       caption: 'Two different molecules. Same destination: crystal deposition.',
       timestamp: 'T+24h',
       labValues: [

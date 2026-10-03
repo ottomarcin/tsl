@@ -194,6 +194,36 @@ describe('useAppStore', () => {
     });
   });
 
+  describe('jumpToStep', () => {
+    it('scrolls smoothly to the middle of the step\'s band', () => {
+      const scrollToSceneProgress = vi.fn();
+      useAppStore.getState().registerScrollApi({ scrollToPage: vi.fn(), scrollBy: vi.fn(), scrollToSceneProgress });
+      useAppStore.getState().jumpToStep(2, 1, 4);
+      expect(scrollToSceneProgress).toHaveBeenCalledWith(2, 0.375, true);
+      useAppStore.getState().jumpToStep(3, 3, 4);
+      expect(scrollToSceneProgress).toHaveBeenLastCalledWith(3, 0.875, true);
+    });
+    it('lands in the middle of the right step: the step index derived from that progress is the one asked for', async () => {
+      const { stepIndexFromProgress } = await import('../lib/steps');
+      const calls: number[] = [];
+      useAppStore.getState().registerScrollApi({ scrollToPage: vi.fn(), scrollBy: vi.fn(), scrollToSceneProgress: (_p, progress) => calls.push(progress) });
+      for (const count of [3, 4]) for (let i = 0; i < count; i++) useAppStore.getState().jumpToStep(0, i, count);
+      expect(calls.slice(0, 3).map((p) => stepIndexFromProgress(p, 3))).toEqual([0, 1, 2]);
+      expect(calls.slice(3).map((p) => stepIndexFromProgress(p, 4))).toEqual([0, 1, 2, 3]);
+    });
+    it('cuts instead of animating under reduced motion', () => {
+      const scrollToSceneProgress = vi.fn();
+      useAppStore.getState().registerScrollApi({ scrollToPage: vi.fn(), scrollBy: vi.fn(), scrollToSceneProgress });
+      useAppStore.getState().setReducedMotion(true);
+      useAppStore.getState().jumpToStep(1, 0, 3);
+      expect(scrollToSceneProgress).toHaveBeenCalledWith(1, expect.closeTo(1 / 6, 9), false);
+    });
+    it('does nothing without a scroll engine', () => {
+      useAppStore.getState().registerScrollApi(null);
+      expect(() => useAppStore.getState().jumpToStep(1, 0, 3)).not.toThrow();
+    });
+  });
+
   describe('model quality', () => {
     it('defaults to high', () => {
       expect(useAppStore.getState().modelQuality).toBe('high');

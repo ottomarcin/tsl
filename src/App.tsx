@@ -28,8 +28,7 @@ const STAGE_LABELS = tlsContent.scenes.map((s) => s.title);
 const SIDE_NAV_SCENES = tlsContent.scenes.map((scene) => ({
   index: scene.index,
   title: scene.title,
-  // Short nav labels ("0.1", "0.2", …) — full step captions belong to each scene epic's caption block, not the nav.
-  subSteps: scene.steps.map((step) => `${scene.index}.${step.order}`),
+  subSteps: scene.steps.map((step) => ({ label: `${scene.index}.${step.order}`, title: step.title ?? step.caption, caption: step.caption })),
 }));
 
 const LEGEND_ITEMS = [
@@ -70,6 +69,7 @@ export function App() {
   const toggleSideNav = useAppStore((s) => s.toggleSideNav);
   const labValues = useAppStore((s) => s.labValues);
   const jumpToScene = useAppStore((s) => s.jumpToScene);
+  const jumpToStep = useAppStore((s) => s.jumpToStep);
   const goToLanding = useAppStore((s) => s.goToLanding);
   const goToEnd = useAppStore((s) => s.goToEnd);
 
@@ -184,6 +184,11 @@ export function App() {
       <SideNav
         scenes={SIDE_NAV_SCENES}
         currentSceneIndex={sceneIndex}
+        currentStepIndex={stepIndex}
+        onJumpToStep={(sceneI, stepI) => {
+          setNavSheetOpen(false);
+          jumpToStep(sceneI, stepI, tlsContent.scenes[sceneI]?.steps.length ?? 1);
+        }}
         expanded={sideNavExpanded}
         onToggleExpanded={toggleSideNav}
         onJumpToScene={(i) => {

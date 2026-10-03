@@ -10,6 +10,7 @@ export const scene1: SceneDefinition = {
     {
       id: 'scene-1-step-1',
       order: 1,
+      title: 'Therapy begins',
       caption: 'Cytotoxic therapy begins. Tumor cells, sensitive to treatment, start to die en masse.',
       timestamp: 'T+6h',
       labValues: [{ metricId: 'K', value: 4.6 }],
@@ -22,6 +23,7 @@ export const scene1: SceneDefinition = {
     {
       id: 'scene-1-step-2',
       order: 2,
+      title: 'Cells rupture',
       caption: 'Cell membranes rupture. Intracellular contents spill into the bloodstream.',
       timestamp: 'T+12h',
       labValues: [
@@ -38,6 +40,7 @@ export const scene1: SceneDefinition = {
     {
       id: 'scene-1-step-3',
       order: 3,
+      title: 'Systemic release',
       caption: 'Within hours, this is no longer local. It is systemic.',
       learnMore: {
         heading: 'Timing matters',

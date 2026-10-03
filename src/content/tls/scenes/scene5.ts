@@ -10,6 +10,7 @@ export const scene5: SceneDefinition = {
     {
       id: 'scene-5-step-1',
       order: 1,
+      title: 'Rewind',
       caption: 'Rewind. What if we had intervened before lysis began?',
       timestamp: 'T+0h',
       labValues: [
@@ -28,6 +29,7 @@ export const scene5: SceneDefinition = {
     {
       id: 'scene-5-step-2',
       order: 2,
+      title: 'Rasburicase',
       caption: 'Rasburicase breaks down uric acid before it can crystallize.',
       labValues: [{ metricId: 'UA', value: 5.5 }],
       learnMore: {
@@ -39,6 +41,7 @@ export const scene5: SceneDefinition = {
     {
       id: 'scene-5-step-3',
       order: 3,
+      title: 'Allopurinol',
       caption: 'Allopurinol works upstream, blocking xanthine oxidase itself.',
       learnMore: {
         heading: 'Allopurinol vs rasburicase',
@@ -49,6 +52,7 @@ export const scene5: SceneDefinition = {
     {
       id: 'scene-5-step-4',
       order: 4,
+      title: 'IV hydration',
       caption: 'Aggressive IV hydration dilutes everything and supports tubular flow.',
       learnMore: {
         heading: 'Hydration targets',
@@ -59,6 +63,7 @@ export const scene5: SceneDefinition = {
     {
       id: 'scene-5-step-5',
       order: 5,
+      title: 'Dialysis',
       caption: 'If TLS still develops despite prophylaxis, dialysis intercepts at the systemic stage.',
       learnMore: {
         heading: 'When to escalate to RRT',
@@ -69,6 +74,7 @@ export const scene5: SceneDefinition = {
     {
       id: 'scene-5-step-6',
       order: 6,
+      title: 'Try it yourself',
       caption: 'Try it yourself. Adjust each intervention and watch the cascade change.',
       // No Learn More for this step — the interaction is the lesson (design spec §5.7, step 5.6).
     },

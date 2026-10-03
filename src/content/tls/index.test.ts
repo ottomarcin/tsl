@@ -66,4 +66,17 @@ describe('tlsContent', () => {
       }
     }
   });
+
+  it('gives every step a distinct two-to-three-word title for the side menu', () => {
+    for (const scene of tlsContent.scenes) {
+      const titles = scene.steps.map((step) => step.title);
+      titles.forEach((t) => {
+        expect(t, `${scene.id} has an untitled step`).toBeTruthy();
+        const words = t!.trim().split(/\s+/).length;
+        expect(words, `"${t}" should be 1–3 words`).toBeGreaterThanOrEqual(1);
+        expect(words, `"${t}" should be 1–3 words`).toBeLessThanOrEqual(3);
+      });
+      expect(new Set(titles).size).toBe(titles.length);
+    }
+  });
 });

@@ -21,6 +21,8 @@ export interface LearnMore {
 export interface ScrollStep {
   id: string;
   order: number;
+  /** A two-to-three-word name for the step, for menus and tooltips. */
+  title?: string;
   /** 1–2 sentences, per the design spec's copy rule. */
   caption: string;
   labValues?: MetricTarget[];
