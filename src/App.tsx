@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from './store/useAppStore';
-import { useFirstRunHint, useReducedMotion, useRouteSync, useWebGLSupport } from './hooks';
+import { useMediaQuery, useBreakpoint, useFirstRunHint, useReducedMotion, useRouteSync, useWebGLSupport } from './hooks';
+import { Menu } from 'lucide-react';
 import { ScrollCanvas } from './engine/ScrollCanvas';
 import { tlsContent } from './content/tls';
 import { LandingScreen } from './components/LandingScreen/LandingScreen';
@@ -60,10 +61,22 @@ export function App() {
   const goToLanding = useAppStore((s) => s.goToLanding);
   const goToEnd = useAppStore((s) => s.goToEnd);
 
+  const breakpoint = useBreakpoint();
+  const isMobile = breakpoint === 'mobile';
+  // Landscape phones: too short for the caption below the mass, so the caption moves to a left column.
+  const shortViewport = useMediaQuery('(max-height: 560px)');
+  const [navSheetOpen, setNavSheetOpen] = useState(false);
+  const setSideNavExpanded = useAppStore((s) => s.setSideNavExpanded);
   const { visible: hintVisible, dismiss: dismissHint } = useFirstRunHint();
   const [legendExpanded, setLegendExpanded] = useState(false);
 
   useRouteSync();
+
+  // Rail defaults: expanded on desktop, icon rail on tablet (design spec §4.3). The user can still toggle it.
+  useEffect(() => {
+    if (breakpoint === 'desktop') setSideNavExpanded(true);
+    else if (breakpoint === 'tablet') setSideNavExpanded(false);
+  }, [breakpoint, setSideNavExpanded]);
 
   useEffect(() => {
     setReducedMotion(reducedMotion);
@@ -146,11 +159,28 @@ export function App() {
         currentSceneIndex={sceneIndex}
         expanded={sideNavExpanded}
         onToggleExpanded={toggleSideNav}
-        onJumpToScene={jumpToScene}
-        onJumpToLanding={goToLanding}
-        onJumpToEnd={goToEnd}
+        onJumpToScene={(i) => {
+          setNavSheetOpen(false);
+          jumpToScene(i);
+        }}
+        onJumpToLanding={() => {
+          setNavSheetOpen(false);
+          goToLanding();
+        }}
+        onJumpToEnd={() => {
+          setNavSheetOpen(false);
+          goToEnd();
+        }}
+        variant={isMobile ? 'sheet' : 'rail'}
+        sheetOpen={navSheetOpen}
+        onSheetOpenChange={setNavSheetOpen}
       />
       <div className={styles.mainArea}>
+        {isMobile && (
+          <button type="button" className={styles.menuButton} aria-label="Open navigation" onClick={() => setNavSheetOpen(true)}>
+            <Menu size={20} aria-hidden="true" />
+          </button>
+        )}
         <div className={styles.themeToggleFloating}>
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
         </div>
@@ -165,8 +195,8 @@ export function App() {
           </div>
         )}
         <div className={styles.canvasArea}>
-          <ScrollCanvas />
-          {scene?.chips && <ChipCluster chips={scene.chips} phase={chipPhase} reducedMotion={reducedMotion} />}
+          <ScrollCanvas viewShift={shortViewport && !isMobile ? 0.22 : 0} />
+          {scene?.chips && <ChipCluster chips={scene.chips} phase={chipPhase} reducedMotion={reducedMotion} layout={isMobile ? 'column' : 'ring'} shifted={shortViewport && !isMobile} />}
           {scene?.summaryBadge && (
             <div className={styles.badgeSlot}>
               <HighRiskBadge
@@ -177,14 +207,12 @@ export function App() {
               />
             </div>
           )}
-          {scene && activeStep && (
-            <div className={styles.captionFloating}>
+          <div className={styles.bottomStack}>
+            {scene && activeStep && (
               <CaptionBlock key={activeStep.id} sceneTitle={scene.title} caption={activeStep.caption} learnMore={activeStep.learnMore} />
-            </div>
-          )}
-        </div>
-        <div className={styles.colorLegendFloating}>
-          <ColorLegend items={LEGEND_ITEMS} expanded={legendExpanded} onToggleExpanded={() => setLegendExpanded((e) => !e)} />
+            )}
+            <ColorLegend items={LEGEND_ITEMS} expanded={legendExpanded} onToggleExpanded={() => setLegendExpanded((e) => !e)} />
+          </div>
         </div>
         <LabStrip
           metrics={tlsContent.metrics}

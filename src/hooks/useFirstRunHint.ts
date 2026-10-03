@@ -37,9 +37,11 @@ export function useFirstRunHint(delayMs = 1500): { visible: boolean; dismiss: ()
     if (!visible) return;
     window.addEventListener('wheel', dismiss, { once: true });
     window.addEventListener('touchmove', dismiss, { once: true });
+    window.addEventListener('scroll', dismiss, { once: true, capture: true });
     return () => {
       window.removeEventListener('wheel', dismiss);
       window.removeEventListener('touchmove', dismiss);
+      window.removeEventListener('scroll', dismiss, { capture: true });
     };
   }, [visible, dismiss]);
 

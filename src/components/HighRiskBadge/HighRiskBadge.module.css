@@ -1,0 +1,61 @@
+.badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-width: 180px;
+  height: 36px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--badge-accent);
+  background: var(--bg-overlay);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-mono);
+  line-height: var(--line-height-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--badge-accent);
+  opacity: 0;
+  transition: opacity 600ms cubic-bezier(0.4, 0, 0.2, 1) 600ms;
+  pointer-events: none;
+}
+
+.red {
+  --badge-accent: var(--flag-red);
+}
+.amber {
+  --badge-accent: var(--flag-amber);
+}
+.normal {
+  --badge-accent: var(--monitor-trace);
+}
+
+.visible {
+  opacity: 1;
+}
+
+.ring {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--badge-accent);
+  animation: pulse 1s ease-in-out infinite alternate;
+}
+
+.still .ring,
+.still {
+  animation: none;
+  transition: none;
+}
+
+@keyframes pulse {
+  from {
+    transform: scale(0.5);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

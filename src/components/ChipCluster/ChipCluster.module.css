@@ -1,0 +1,27 @@
+.layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-scene-chrome);
+}
+
+.slot {
+  position: absolute;
+  transform: translate(-50%, -50%) scale(0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition-property: opacity, transform, left, top;
+  transition-duration: 300ms, 300ms, 600ms, 600ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.shown {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Short landscape: the layer covers only the area right of the caption column. */
+.layerShifted {
+  left: 44%;
+}

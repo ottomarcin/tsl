@@ -36,6 +36,7 @@ async function setUpApp(webglSupported: boolean) {
 describe('App', () => {
   beforeEach(() => {
     window.history.replaceState(null, '', '/');
+    window.innerWidth = 1440;
   });
 
   afterEach(() => {
@@ -109,6 +110,37 @@ describe('App', () => {
     // SideNav also has an "End card" nav item, so match the placeholder's exact copy, not a substring.
     expect(screen.getByText('End card — Epic 9')).toBeInTheDocument();
     expect(screen.queryByTestId('mock-scroll-canvas')).not.toBeInTheDocument();
+  });
+
+  describe('responsive chrome', () => {
+    it('shows the icon rail (collapsed) on tablet widths', async () => {
+      window.innerWidth = 900;
+      window.history.replaceState(null, '', '/scene/0');
+      const { App } = await setUpApp(true);
+      render(<App />);
+      expect(screen.getByRole('button', { name: 'Expand navigation' })).toBeInTheDocument();
+    });
+
+    it('replaces the rail with a hamburger + bottom sheet on mobile', async () => {
+      window.innerWidth = 390;
+      window.history.replaceState(null, '', '/scene/0');
+      const { App, useAppStore } = await setUpApp(true);
+      render(<App />);
+      expect(screen.queryByRole('navigation', { name: 'Scene navigation' })).not.toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
+      const dialog = await screen.findByRole('dialog');
+      await userEvent.click(within(dialog).getByRole('button', { name: /cytolysis/i }));
+      expect(useAppStore.getState().route).toEqual({ kind: 'scene', index: 1 });
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('lays chips out as a column on mobile', async () => {
+      window.innerWidth = 390;
+      window.history.replaceState(null, '', '/scene/0');
+      const { App } = await setUpApp(true);
+      const { container } = render(<App />);
+      expect(container.querySelector('[data-layout="column"]')).toBeInTheDocument();
+    });
   });
 
   describe('Scene 0 step bindings', () => {

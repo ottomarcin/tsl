@@ -6,3 +6,5 @@ coverage
 storybook-static
 .npm-cache
 *.tsbuildinfo
+assets-src
+**/.DS_Store

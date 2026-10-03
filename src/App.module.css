@@ -32,11 +32,75 @@
   z-index: var(--z-persistent-ui);
 }
 
-.colorLegendFloating {
+.bottomStack {
   position: absolute;
-  left: 32px;
-  bottom: 24px;
+  left: var(--space-8);
+  right: var(--space-8);
+  bottom: var(--space-4);
   z-index: var(--z-persistent-ui);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  pointer-events: none;
+}
+
+.bottomStack > * {
+  pointer-events: auto;
+}
+
+.menuButton {
+  position: absolute;
+  top: var(--space-4);
+  left: var(--space-4);
+  z-index: var(--z-persistent-ui);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-input);
+  background: var(--bg-overlay);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.menuButton:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+}
+
+.menuButton:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-height: 560px) and (min-width: 768px) {
+  .bottomStack {
+    right: auto;
+    top: var(--space-4);
+    bottom: auto;
+    width: 38%;
+    max-height: calc(100% - 2 * var(--space-4));
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .bottomStack {
+    left: var(--space-4);
+    right: var(--space-4);
+  }
+
+  .themeToggleFloating {
+    top: var(--space-4);
+    right: var(--space-4);
+  }
+
+  .minimapFloating {
+    display: none;
+  }
 }
 
 .firstRunHintFloating {
@@ -63,11 +127,4 @@
   transform: translate(-50%, -50%);
   z-index: var(--z-scene-chrome);
   pointer-events: none;
-}
-
-.captionFloating {
-  position: absolute;
-  left: 32px;
-  bottom: 72px;
-  z-index: var(--z-persistent-ui);
 }

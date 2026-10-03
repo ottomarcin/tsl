@@ -1,0 +1,132 @@
+.block {
+  width: 420px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  /* Keeps the text legible where the 3D scene passes behind it. */
+  background: var(--bg-overlay);
+  font-family: var(--font-sans);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-label);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.caption {
+  margin: 0;
+  font-size: var(--font-size-body-lg);
+  line-height: var(--line-height-body-lg);
+  color: var(--text-primary);
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) 0;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: var(--font-size-body-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.trigger:hover {
+  color: var(--text-primary);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 4px;
+}
+
+.panel {
+  width: 100%;
+  max-height: min(45vh, 360px);
+  overflow-y: auto;
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+}
+
+.panelOpen {
+  animation: slideDown 320ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panelOpen {
+    animation: none;
+  }
+}
+
+.heading {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-h2);
+  line-height: var(--line-height-h2);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.body {
+  margin: 0 0 var(--space-4);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  color: var(--text-secondary);
+}
+
+.sourcesLabel {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-label);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.sources {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body-sm);
+  color: var(--text-secondary);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--monitor-trace);
+  text-decoration: none;
+}
+
+.link:hover,
+.link:focus-visible {
+  text-decoration: underline;
+}
