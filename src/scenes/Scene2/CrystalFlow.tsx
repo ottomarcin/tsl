@@ -22,7 +22,12 @@ export interface CrystalFlowProps extends ProgressProps {
   getPresence: () => number;
   kind: CrystalKind;
   modelId: string;
+  /** Share (0–1) of the crystals that form at all, read every frame (a therapy that stops the rest). Default 1. */
+  getShare?: () => number;
 }
+
+/** Each crystal's place in the order in which a therapy takes them away (spread evenly, 0–0.9). */
+const rank = (i: number) => ((i * 0.6180339887) % 1) * 0.9;
 
 /** The crystal models are ~0.05 units across (spec: 0.06): scaled up so they read at scene scale. */
 const SCALE = 6;
@@ -34,7 +39,7 @@ const tint = new Color(1, 1, 1);
  * Crystals that form where calcium meets phosphate (and where uric acid emerges), drift down their tube and then
  * stream into the kidney. One instanced draw call per kind; position is a pure function of scene progress.
  */
-export function CrystalFlow({ kind, modelId, getProgress, getPresence, reducedMotion }: CrystalFlowProps) {
+export function CrystalFlow({ kind, modelId, getProgress, getPresence, getShare, reducedMotion }: CrystalFlowProps) {
   const gltf = useModel(tlsModels, modelId, 'instanced');
   const parts = useMemo(() => collectMeshes(gltf.scene), [gltf]);
   const crystals = useMemo(() => buildCrystals(kind), [kind]);
@@ -52,10 +57,12 @@ export function CrystalFlow({ kind, modelId, getProgress, getPresence, reducedMo
   const last = useRef(NaN);
   const lastTime = useRef(NaN);
   const lastPresence = useRef(NaN);
+  const lastShare = useRef(NaN);
 
   const apply = (progress: number, time: number) => {
     const presence = getPresence();
     const conv = convergence(progress);
+    const share = getShare ? getShare() : 1;
     crystals.forEach((c, i) => {
       const u = crystalJourney(c, progress);
       if (u === null || presence < 0.01) {
@@ -70,7 +77,7 @@ export function CrystalFlow({ kind, modelId, getProgress, getPresence, reducedMo
         const absorbed = u > 0.97 ? Math.max(0, 1 - (u - 0.97) / 0.03) : 1;
         scratch.position.set(pos[0] + c.offset[0] * spread, pos[1] + c.offset[1] * spread, pos[2] + c.offset[2]);
         scratch.rotation.set(0.5 + time * 0.2 * (i % 2 ? 1 : -1), 0.3, c.spin + time * 0.3);
-        scratch.scale.setScalar(SCALE * c.scale * grow * absorbed * presence);
+        scratch.scale.setScalar(SCALE * c.scale * grow * absorbed * presence * Math.max(0, Math.min(1, (share - rank(i)) / 0.1)));
       }
       scratch.updateMatrix();
       rig.setMatrixAt(i, scratch.matrix as Matrix4);
@@ -88,7 +95,9 @@ export function CrystalFlow({ kind, modelId, getProgress, getPresence, reducedMo
   useFrame(({ clock }) => {
     const p = getProgress();
     const time = reducedMotion ? 0 : clock.elapsedTime;
-    if (p === last.current && time === lastTime.current && getPresence() === lastPresence.current) return;
+    const share = getShare ? getShare() : 1;
+    if (p === last.current && time === lastTime.current && getPresence() === lastPresence.current && share === lastShare.current) return;
+    lastShare.current = share;
     last.current = p;
     lastPresence.current = getPresence();
     lastTime.current = time;

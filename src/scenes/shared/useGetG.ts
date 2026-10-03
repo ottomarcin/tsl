@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { REDUCED_MOTION_PROGRESS as CASCADE_SNAPSHOTS } from '../../lib/cascade';
 import { REDUCED_MOTION_PROGRESS as CYTOLYSIS_SNAPSHOTS } from '../../lib/cytolysis';
 import { REDUCED_MOTION_PROGRESS as RENAL_SNAPSHOTS } from '../../lib/renal';
+import { REDUCED_MOTION_PROGRESS as SCENE5_SNAPSHOTS } from '../../lib/scene5';
 import { REDUCED_MOTION_PROGRESS as SYSTEMIC_SNAPSHOTS } from '../../lib/systemic';
 import { stepIndexFromProgress } from '../../lib/steps';
 import { useAppStore } from '../../store/useAppStore';
@@ -14,6 +15,7 @@ const SNAPSHOTS: Record<number, readonly number[]> = {
   2: CASCADE_SNAPSHOTS,
   3: RENAL_SNAPSHOTS,
   4: SYSTEMIC_SNAPSHOTS,
+  5: SCENE5_SNAPSHOTS,
 };
 
 /** Snaps a position on the timeline to the still snapshot of the step it falls in. */

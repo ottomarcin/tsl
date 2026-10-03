@@ -1,7 +1,8 @@
 import type { SceneDefinition } from '../../schema';
 import { cite } from '../citations';
 
-// Transcribed verbatim from tls_design_specification.md §5.7.
+// Transcribed from tls_design_specification.md §5.7. The lab strip in steps 5.2–5.6 is computed from the interventions
+// that are on (the effect functions in ../interventions), not authored per step.
 export const scene5: SceneDefinition = {
   id: 'scene-5',
   index: 5,
@@ -31,7 +32,7 @@ export const scene5: SceneDefinition = {
       order: 2,
       title: 'Rasburicase',
       caption: 'Rasburicase breaks down uric acid before it can crystallize.',
-      labValues: [{ metricId: 'UA', value: 5.5 }],
+      // Steps 5.2–5.6 have no fixed lab targets: the strip shows the live counterfactual (see lib/scene5, App).
       learnMore: {
         heading: 'How rasburicase works',
         body: 'Rasburicase is recombinant urate oxidase. It converts existing uric acid into allantoin, which is 5–10× more soluble than uric acid and is excreted renally. A single fixed 3 mg dose is sufficient for most adult prophylaxis (BSH 2025); the licensed dose of 0.2 mg/kg/day for up to 7 days is reserved for established clinical TLS. G6PD status must be confirmed before administration. Rasburicase is contraindicated in G6PD deficiency because the hydrogen peroxide generated as a byproduct can cause severe hemolysis.',

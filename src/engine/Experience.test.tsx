@@ -46,8 +46,8 @@ describe('Experience: what is mounted', () => {
     [1, ['tumor', 'cascade']],
     [2, ['tumor', 'cascade', 'nephron']],
     [3, ['tumor', 'cascade', 'nephron', 'systemic']],
-    [4, ['systemic']],
-    [5, ['systemic']],
+    [4, ['tumor', 'cascade', 'systemic']],
+    [5, ['tumor', 'cascade', 'systemic']],
   ])('scene %i', async (index, expected) => {
     setRoute(index);
     const renderer = await mount();

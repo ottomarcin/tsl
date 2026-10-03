@@ -51,7 +51,12 @@ export function HeartIcon({ getProgress, getPresence, reducedMotion, label }: Pr
 }
 
 /** Bean-shaped kidney at the bottom of the frame, half out of view; glows from within as crystals arrive. */
-export function Kidney({ getProgress, getPresence, label }: Pick<ProgressProps, 'getProgress'> & PresenceProps & { label: string }) {
+export function Kidney({
+  getProgress,
+  getPresence,
+  label,
+  getLoadScale,
+}: Pick<ProgressProps, 'getProgress'> & PresenceProps & { label: string; getLoadScale?: () => number }) {
   const { root, materials } = useModelClone('kidney');
   const rest = useRef(materials.map(captureEmissive));
   const GLOW = useRef(new Color('#C9C0A8'));
@@ -62,7 +67,7 @@ export function Kidney({ getProgress, getPresence, label }: Pick<ProgressProps, 
 
   useFrame(() => {
     fade();
-    const load = kidneyLoad(getProgress());
+    const load = kidneyLoad(getProgress()) * (getLoadScale ? getLoadScale() : 1);
     materials.forEach((m, i) => applyGlow(m, rest.current[i], GLOW.current, 0.1 * load, 0.9 + 1.2 * load));
   });
 

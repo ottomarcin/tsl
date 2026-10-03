@@ -70,6 +70,7 @@ const hydration: InterventionDefinition = {
   cascadeBranchId: 'PO4', // positioned at the convergence point entering the kidney, approximated here
   cascadePositionT: 1.0,
   controlType: 'slider',
+  slider: { max: 4, unit: 'L/m²/day' },
   applyEffect(baseline: MetricValueMap, state: InterventionStateMap): MetricValueMap {
     const rate = toRate(state, 'hydration');
     if (rate <= 0) return baseline;

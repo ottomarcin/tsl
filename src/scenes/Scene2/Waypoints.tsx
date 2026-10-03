@@ -13,6 +13,8 @@ export interface WaypointsProps extends ProgressProps {
   /** Labels that name an enzyme (drawn as a ring, not a disc). */
   enzymeLabel: string;
   moleculeColor: string;
+  /** True when the markers should be on show whatever the stream has reached (Scene 5's idle cascade). */
+  getAlwaysShown?: () => boolean;
 }
 
 const PURINE = new Color('#9B6BD4');
@@ -26,6 +28,7 @@ function Marker({
   getPresence,
   reducedMotion,
   moleculeColor,
+  getAlwaysShown,
 }: {
   waypoint: CascadeWaypoint;
   position: Vec3;
@@ -34,6 +37,7 @@ function Marker({
   getPresence: () => number;
   reducedMotion: boolean;
   moleculeColor: string;
+  getAlwaysShown?: () => boolean;
 }) {
   const { root, materials } = useModelClone(enzyme ? 'xoEnzyme' : 'waypoint');
   const group = useRef<Group>(null);
@@ -41,7 +45,8 @@ function Marker({
 
   useFrame(({ clock }, delta) => {
     // Appears as the purine stream's front reaches it.
-    const shown = Math.max(0, Math.min(1, (streamReveal('purines', getProgress()) - waypoint.t) / 0.08 + 0.001)) * getPresence();
+    const reached = getAlwaysShown?.() ? 1 : Math.max(0, Math.min(1, (streamReveal('purines', getProgress()) - waypoint.t) / 0.08 + 0.001));
+    const shown = reached * getPresence();
     label.current += (shown - label.current) * Math.min(1, delta * 8);
     if (!group.current) return;
     group.current.visible = shown > 0.01;
@@ -72,7 +77,7 @@ function Marker({
 }
 
 /** Hypoxanthine / xanthine / uric acid nodes and the two xanthine-oxidase rings along the purine tube. */
-export function Waypoints({ waypoints, enzymeLabel, moleculeColor, getProgress, getPresence, reducedMotion }: WaypointsProps) {
+export function Waypoints({ waypoints, enzymeLabel, moleculeColor, getProgress, getPresence, reducedMotion, getAlwaysShown }: WaypointsProps) {
   const lut = getTubeLuts().purines;
   const positions = useMemo(() => waypoints.map((w) => lutPoint(lut, w.t, [0, 0, 0] as Vec3)), [waypoints, lut]);
   return (
@@ -87,6 +92,7 @@ export function Waypoints({ waypoints, enzymeLabel, moleculeColor, getProgress, 
           getPresence={getPresence}
           reducedMotion={reducedMotion}
           moleculeColor={moleculeColor}
+          getAlwaysShown={getAlwaysShown}
         />
       ))}
     </>

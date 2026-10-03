@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { useThree } from '@react-three/fiber';
+import { useEffect, useRef } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
 
 const FOV_HALF_TAN = Math.tan((50 / 2) * (Math.PI / 180));
 /** Radius of the tumor mass plus margin for UI overlays. */
@@ -25,13 +25,26 @@ export function cameraDistanceForExtent(aspect: number, { halfWidth, halfHeight 
  * Applies the screen-shift for layouts with a left caption column (the image moves right by this fraction of the
  * canvas width). Resets on unmount so nothing later inherits it.
  */
-export function useViewShift(viewShift: number): void {
+export function useViewShift(viewShift: number, getExtra?: () => number): void {
   const camera = useThree((s) => s.camera);
   const width = useThree((s) => s.size.width);
   const height = useThree((s) => s.size.height);
+  // An extra shift that comes and goes with the story (Scene 5's side panel pushes the picture aside), eased in.
+  const extra = useRef(getExtra ? getExtra() : 0);
+  useFrame((_, delta) => {
+    if (!getExtra) return;
+    const target = getExtra();
+    if (Math.abs(target - extra.current) < 1e-4) return;
+    extra.current += (target - extra.current) * Math.min(1, delta * 5);
+    const total = viewShift + extra.current;
+    if (Math.abs(total) < 1e-4) camera.clearViewOffset();
+    else camera.setViewOffset(width, height, -total * width, 0, width, height);
+    camera.updateProjectionMatrix();
+  });
 
   useEffect(() => {
-    if (viewShift) camera.setViewOffset(width, height, -viewShift * width, 0, width, height);
+    const total = viewShift + extra.current;
+    if (total) camera.setViewOffset(width, height, -total * width, 0, width, height);
     else camera.clearViewOffset();
     camera.updateProjectionMatrix();
     return () => {

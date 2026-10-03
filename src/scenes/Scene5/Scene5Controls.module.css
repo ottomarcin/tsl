@@ -1,0 +1,42 @@
+.scrubber {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-4);
+  transform: translateX(-50%);
+  z-index: var(--z-persistent-ui);
+  width: min(420px, calc(100% - 2 * var(--space-4)));
+}
+
+.panel {
+  position: absolute;
+  right: var(--space-8);
+  bottom: var(--space-16);
+  z-index: var(--z-persistent-ui);
+}
+
+.sheetButton {
+  position: absolute;
+  left: var(--space-4);
+  right: var(--space-4);
+  top: 140px;
+  z-index: var(--z-persistent-ui);
+}
+
+.sheetButton > * {
+  width: 100%;
+}
+
+/* Beside the caption (left) and the panel (right) the scrubber needs to be narrower. */
+@media (max-width: 1279px) {
+  .scrubber {
+    width: min(340px, calc(100% - 2 * var(--space-4)));
+  }
+}
+
+@media (max-width: 767px) {
+  .scrubber {
+    top: 72px;
+    bottom: auto;
+    width: calc(100% - 2 * var(--space-4));
+  }
+}

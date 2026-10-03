@@ -286,6 +286,112 @@ describe('App', () => {
     });
   });
 
+  describe('Scene 5: interventions', () => {
+    async function openScene5AtProgress(progress: number) {
+      window.history.replaceState(null, '', '/scene/5');
+      const { App, useAppStore } = await setUpApp(true);
+      const utils = render(<App />);
+      await act(async () => {
+        useAppStore.getState().setSceneProgress(progress);
+      });
+      return { ...utils, useAppStore };
+    }
+    const steps = tlsContent.scenes[5].steps;
+    // Late in the step: by then the cascade of step 5.2 has run to its peak.
+    const at = (step: number) => (step + 0.8) / 6;
+
+    it('step 5.1 rewinds to the baseline labs at T+0h, with no scrubber and no panel', async () => {
+      const { useAppStore } = await openScene5AtProgress(at(0));
+      inCaption().getByText(steps[0].caption);
+      expect(useAppStore.getState().labValues).toMatchObject({ K: 4.2, Ca: 9.4, PO4: 3.5, UA: 5.0, Cr: 0.9 });
+      expect(screen.getAllByText('T+0h').length).toBeGreaterThan(0);
+      expect(screen.queryByRole('slider')).not.toBeInTheDocument();
+    });
+
+    it('step 5.2: rasburicase brings uric acid down and nothing else', async () => {
+      const { useAppStore } = await openScene5AtProgress(at(1));
+      const labs = useAppStore.getState().labValues;
+      expect(labs.UA).toBeCloseTo(11.4 * 0.3, 6);
+      expect(labs.K).toBe(6.3);
+      expect(screen.getAllByText('T+48h').length).toBeGreaterThan(0);
+    });
+
+    it('step 5.3: allopurinol halves uric acid; step 5.4: hydration lowers K, PO₄ and creatinine; step 5.5: dialysis caps them', async () => {
+      const { useAppStore } = await openScene5AtProgress(at(2));
+      expect(useAppStore.getState().labValues.UA).toBeCloseTo(5.7, 6);
+      await act(async () => useAppStore.getState().setSceneProgress(at(3)));
+      expect(useAppStore.getState().labValues.K).toBeLessThan(6.3);
+      expect(useAppStore.getState().labValues.Cr).toBeLessThan(3.1);
+      await act(async () => useAppStore.getState().setSceneProgress(at(4)));
+      expect(useAppStore.getState().labValues).toMatchObject({ K: 5.0, PO4: 5.0, UA: 7.0 });
+    });
+
+    it('shows the time scrubber from step 5.2 on, and dragging it moves the labs between T+0h and the peak', async () => {
+      const { useAppStore } = await openScene5AtProgress(at(1));
+      const scrubber = screen.getByRole('slider', { name: 'Time since lysis began' });
+      expect(scrubber).toHaveAttribute('aria-valuetext', 'T+48h');
+      await act(async () => useAppStore.getState().setScrub(0));
+      expect(useAppStore.getState().labValues).toMatchObject({ K: 4.2, UA: 5.0 });
+      expect(screen.getByRole('slider', { name: 'Time since lysis began' })).toHaveAttribute('aria-valuetext', 'T+0h');
+      await act(async () => useAppStore.getState().setScrub(0.5));
+      expect(useAppStore.getState().labValues.K).toBeCloseTo((4.2 + 6.3) / 2, 6);
+    });
+
+    it('a new step puts the scrubber back on the story\'s own timeline', async () => {
+      const { useAppStore } = await openScene5AtProgress(at(1));
+      await act(async () => useAppStore.getState().setScrub(0.2));
+      await act(async () => useAppStore.getState().setSceneProgress(at(2)));
+      expect(useAppStore.getState().scrub).toBeNull();
+    });
+
+    it('step 5.6 is free play: the panel appears, its switches drive the labs, and reset returns to baseline', async () => {
+      const { useAppStore } = await openScene5AtProgress(at(5));
+      inCaption().getByText(steps[5].caption);
+      expect(screen.queryByRole('button', { name: /learn more/i })).not.toBeInTheDocument();
+      const panel = screen.getByRole('region', { name: 'Try interventions' });
+      expect(useAppStore.getState().labValues).toMatchObject({ K: 6.3, UA: 11.4 });
+      await userEvent.click(within(panel).getByRole('switch', { name: 'Rasburicase' }));
+      expect(useAppStore.getState().interventionState).toEqual({ rasburicase: true });
+      expect(useAppStore.getState().labValues.UA).toBeCloseTo(3.42, 6);
+      await userEvent.click(within(panel).getByRole('button', { name: 'Reset T+0' }));
+      expect(useAppStore.getState().interventionState).toEqual({});
+      expect(useAppStore.getState().labValues.UA).toBeCloseTo(11.4, 6);
+    });
+
+    it('the panel is not there before the last step', async () => {
+      await openScene5AtProgress(at(4));
+      expect(screen.queryByRole('region', { name: 'Try interventions' })).not.toBeInTheDocument();
+    });
+
+    it('on a phone the panel is a bottom sheet behind a "Try interventions" button', async () => {
+      window.innerWidth = 390;
+      await openScene5AtProgress(at(5));
+      expect(screen.queryByRole('region', { name: 'Try interventions' })).not.toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Try interventions' }));
+      expect(await screen.findByRole('region', { name: 'Try interventions' })).toBeInTheDocument();
+    });
+
+    it('shows no cascade minimap (the cascade itself is on screen)', async () => {
+      await openScene5AtProgress(at(1));
+      expect(screen.queryByRole('img', { name: /Cascade progress minimap/ })).not.toBeInTheDocument();
+    });
+
+    it('has six steps in the side menu', async () => {
+      await openScene5AtProgress(at(0));
+      const nav = screen.getByRole('navigation', { name: 'Scene navigation' });
+      expect(within(nav).getAllByRole('button', { name: /^5\.\d / })).toHaveLength(6);
+    });
+
+    it('has no accessibility violations at any step', async () => {
+      for (const step of [0, 1, 5]) {
+        const { container, unmount } = await openScene5AtProgress(at(step));
+        expect(await axe(container)).toHaveNoViolations();
+        unmount();
+        vi.resetModules();
+      }
+    });
+  });
+
   describe('Scene 3 step bindings and the mechanism toggle', () => {
     async function openScene3AtProgress(progress: number) {
       window.history.replaceState(null, '', '/scene/3');

@@ -19,10 +19,12 @@ export interface ScenePointLabelProps {
   getText?: () => string;
   /** A caption-sized label, for text that carries a message rather than naming a part. */
   large?: boolean;
+  /** Which edge of the text sits at `position`: the middle (default), its start (text runs right) or its end (text runs left). */
+  align?: 'start' | 'center' | 'end';
 }
 
 /** A text label pinned to a point in the 3D scene (drei Html). Never takes pointer events. */
-export function ScenePointLabel({ position, text, color, opacity = 1, getOpacity, getText, subtle = false, large = false }: ScenePointLabelProps) {
+export function ScenePointLabel({ position, text, color, opacity = 1, getOpacity, getText, subtle = false, large = false, align = 'center' }: ScenePointLabelProps) {
   const span = useRef<HTMLSpanElement>(null);
   useFrame(() => {
     if (getOpacity && span.current) span.current.style.opacity = String(getOpacity());
@@ -34,7 +36,7 @@ export function ScenePointLabel({ position, text, color, opacity = 1, getOpacity
   const portal = useMemo(() => ({ current: container as HTMLElement }), [container]);
   return (
     <Html position={position} center zIndexRange={[5, 0]} portal={portal} style={{ pointerEvents: 'none' }}>
-      <span ref={span} className={[styles.label, subtle ? styles.subtle : '', large ? styles.large : ''].join(' ')} style={{ color, opacity: getOpacity ? 0 : opacity }}>
+      <span ref={span} className={[styles.label, subtle ? styles.subtle : '', large ? styles.large : ''].join(' ')} style={{ color, opacity: getOpacity ? 0 : opacity, transform: align === 'start' ? 'translateX(50%)' : align === 'end' ? 'translateX(-50%)' : undefined }}>
         {/* With getText the words are written straight into the element each frame, so React must not own them. */}
         {getText ? null : text}
       </span>

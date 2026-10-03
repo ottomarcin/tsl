@@ -13,6 +13,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   labValues: {},
   sideNavExpanded: true,
   interventionState: {},
+  scrub: null,
   modeSelection: {},
   modelQuality: resolveInitialQuality(window.location.search),
   reducedMotion: false,
@@ -97,7 +98,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   resetInterventions() {
-    set({ interventionState: {} });
+    set({ interventionState: {}, scrub: null });
+  },
+
+  setScrub(tau: number | null) {
+    set({ scrub: tau === null ? null : Math.max(0, Math.min(1, tau)) });
   },
 
   setModelQuality(quality) {

@@ -1,4 +1,5 @@
-import { useLayoutEffect, useMemo } from 'react';
+import { useCallback, useLayoutEffect, useMemo } from 'react';
+import { FREE_PLAY_STEP, scene5Step } from '../lib/scene5';
 import { useFrame, useThree } from '@react-three/fiber';
 import type { PerspectiveCamera } from 'three';
 import { cameraPoseAt, SCENE2_OFFSET, SCENE4_OFFSET, type CameraContext } from '../lib/timeline';
@@ -11,6 +12,9 @@ import { cameraDistanceFor, cameraDistanceForExtent, useViewShift } from '../sce
 import { useGetG } from '../scenes/shared/useGetG';
 import { TumorStage } from '../scenes/Tumor/TumorStage';
 import { useAppStore } from '../store/useAppStore';
+
+/** How far the picture moves aside for the Scene 5 panel, as a fraction of the canvas width. */
+const PANEL_SHIFT = 0.17;
 
 export interface ExperienceProps {
   viewShift?: number;
@@ -28,7 +32,9 @@ export function Experience({ viewShift = 0 }: ExperienceProps) {
   const route = useAppStore((s) => s.route);
   const reducedMotion = useAppStore((s) => s.reducedMotion);
   const getG = useGetG(reducedMotion);
-  useViewShift(viewShift);
+  // In free play (step 5.6) the intervention panel takes the right edge; the picture moves aside to stay clear of it.
+  const panelOpen = useCallback(() => aspect >= 1.2 && getG() >= 5 && scene5Step(getG()) === FREE_PLAY_STEP, [aspect, getG]);
+  useViewShift(viewShift, () => (panelOpen() ? -PANEL_SHIFT : 0));
 
   const framing = useMemo<CameraContext>(
     () => ({
@@ -59,15 +65,16 @@ export function Experience({ viewShift = 0 }: ExperienceProps) {
   useFrame(place);
 
   const index = route.kind === 'scene' ? route.index : 0;
-  const tumor = index <= 3;
-  const cascade = index >= 1 && index <= 3;
+  // The cascade stays mounted to the end: Scene 5 brings it back.
+  const cascade = index >= 1;
   const nephron = index >= 2 && index <= 3;
   // The panels are mounted from Scene 3 so their models are loaded when the camera arrives, and stay for the rest.
   const systemic = index >= 3;
 
   return (
     <FramingContext.Provider value={framing}>
-      {tumor && <TumorStage reducedMotion={reducedMotion} />}
+      {/* Mounted throughout: the burst's remains are the cascade's source cloud, which Scene 5 shows again. */}
+      <TumorStage reducedMotion={reducedMotion} />
       {cascade && <Scene2 reducedMotion={reducedMotion} />}
       {nephron && <Scene3 reducedMotion={reducedMotion} />}
       {systemic && <Scene4 reducedMotion={reducedMotion} layout={layoutForAspect(aspect)} />}

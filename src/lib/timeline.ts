@@ -60,7 +60,9 @@ export function cascadePresence(g: number): number {
   const fadeIn = smooth(clamp01((g - (CLOUD_START + 0.04)) / 0.1));
   // ...and out again while the camera dives into the kidney and the tubule takes its place.
   const fadeOut = smooth(clamp01((g - CASCADE_FADE_START) / (CASCADE_FADE_END - CASCADE_FADE_START)));
-  return fadeIn * (1 - fadeOut);
+  // ...and back in at the end of Scene 4, when the story rewinds to T+0 (Scene 5).
+  const rewindIn = smooth(clamp01((g - (REWIND_START + 0.04)) / 0.1));
+  return fadeIn * (1 - fadeOut) + rewindIn;
 }
 
 // ---------------------------------------------------------------- the nephron (Scene 3)
@@ -123,7 +125,24 @@ export function systemicTransition(g: number): number {
 
 /** Fade-in of the panels' materials as the camera settles. */
 export function systemicPresence(g: number): number {
-  return smooth(clamp01((g - (SYSTEMIC_START + 0.05)) / 0.08));
+  const fadeIn = smooth(clamp01((g - (SYSTEMIC_START + 0.05)) / 0.08));
+  // The panels give way to the cascade again as Scene 5 rewinds.
+  const fadeOut = smooth(clamp01((g - REWIND_START) / 0.1));
+  return fadeIn * (1 - fadeOut);
+}
+
+// ---------------------------------------------------------------- the rewind (Scene 5)
+
+/**
+ * Over the end of Scene 4 the panels fade out and the camera climbs back to the cascade's framing, which returns at
+ * its T+0 state (`g = 5` already is Scene 5). The cascade and the panels live at different heights, so the camera
+ * covers the distance between them.
+ */
+export const REWIND_SPAN = 0.14;
+export const REWIND_START = 5 - REWIND_SPAN;
+
+export function rewindTransition(g: number): number {
+  return smooth(clamp01((g - REWIND_START) / REWIND_SPAN));
 }
 
 // ---------------------------------------------------------------- camera
@@ -204,9 +223,18 @@ export function cameraPoseAt(g: number, ctx: CameraContext): CameraPose {
   const rest = cameraPoseAt(SYSTEMIC_START, ctx);
   const m = systemicTransition(g);
   const sy = ctx.systemicTargetY;
-  return {
+  const panels: CameraPose = {
     position: [0, lerp(rest.position[1], sy, m), lerp(rest.position[2], ctx.systemicDistance, m)],
     target: [0, lerp(rest.target[1], sy, m), 0],
+    fov: 50,
+  };
+  if (g <= REWIND_START) return panels;
+
+  // End of Scene 4: climb back to the cascade's framing for the rewind.
+  const r = rewindTransition(g);
+  return {
+    position: [0, lerp(panels.position[1], ctx.cascadeTargetY, r), lerp(panels.position[2], ctx.cascadeDistance, r)],
+    target: [0, lerp(panels.target[1], ctx.cascadeTargetY, r), 0],
     fov: 50,
   };
 }

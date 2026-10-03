@@ -12,6 +12,9 @@ import {
   SCENE4_OFFSET,
   SYSTEMIC_SPAN,
   SYSTEMIC_START,
+  REWIND_SPAN,
+  REWIND_START,
+  rewindTransition,
   systemicPresence,
   systemicTransition,
   TUBULE_BIRTH_SCALE,
@@ -79,7 +82,7 @@ describe('camera', () => {
 
   it('never moves faster than a small step between neighbouring points on the timeline', () => {
     let prev = cameraPoseAt(0, ctx);
-    for (let g = 0.01; g <= 4.2; g += 0.01) {
+    for (let g = 0.01; g <= 5.2; g += 0.01) {
       const p = cameraPoseAt(g, ctx);
       expect(Math.abs(p.position[2] - prev.position[2])).toBeLessThan(2.2);
       // The flight down to the nephron covers ~17 units over 0.14 of the timeline.
@@ -179,7 +182,7 @@ describe('nephron hand-over: dive into the kidney, then the tubule', () => {
     expect(tubuleTransition(TUBULE_START)).toBe(0);
     expect(tubuleTransition(3)).toBe(1);
     expect(cameraPoseAt(3.6, ctx).position[2]).toBeLessThan(cameraPoseAt(3, ctx).position[2]);
-    expect(cameraPoseAt(4, ctx).position[2]).toBeCloseTo(cameraPoseAt(5, ctx).position[2], 9);
+    expect(cameraPoseAt(4, ctx).position[2]).toBeCloseTo(cameraPoseAt(4.5, ctx).position[2], 9);
   });
 });
 
@@ -192,7 +195,7 @@ describe('systemic hand-over: the tubule gives way to the heart and hand', () =>
     expect(p.position[1]).toBeCloseTo(-10.6, 6);
     expect(p.target[1]).toBeCloseTo(-10.6, 6);
     expect(p.position[2]).toBeCloseTo(15, 6);
-    expect(cameraPoseAt(5, ctx)).toEqual(cameraPoseAt(4, ctx));
+    expect(cameraPoseAt(4.5, ctx)).toEqual(cameraPoseAt(4, ctx));
   });
   it('moves only over the last stretch of Scene 3, and without a jump at either end', () => {
     expect(SYSTEMIC_START).toBeCloseTo(4 - SYSTEMIC_SPAN, 9);
@@ -212,6 +215,37 @@ describe('systemic hand-over: the tubule gives way to the heart and hand', () =>
     const mid = SYSTEMIC_START + 0.08;
     expect(tubulePresence(mid)).toBeGreaterThan(0);
     expect(tubulePresence(mid)).toBeLessThan(1);
+    expect(systemicPresence(mid)).toBeGreaterThan(0);
+  });
+});
+
+describe('rewind hand-over: the panels give way to the cascade again (Scene 5)', () => {
+  it('runs over the end of Scene 4', () => {
+    expect(REWIND_START).toBeCloseTo(5 - REWIND_SPAN, 9);
+    expect(rewindTransition(4.5)).toBe(0);
+    expect(rewindTransition(5)).toBe(1);
+  });
+  it('every scene start looks like its scene: at g = 5 the camera frames the cascade', () => {
+    const p = cameraPoseAt(5, ctx);
+    expect(p.position[1]).toBeCloseTo(ctx.cascadeTargetY, 6);
+    expect(p.position[2]).toBeCloseTo(ctx.cascadeDistance, 6);
+    expect(cameraPoseAt(5.7, ctx)).toEqual(cameraPoseAt(5, ctx));
+  });
+  it('has no jump where it starts or ends', () => {
+    for (const boundary of [REWIND_START, 5]) {
+      const a = cameraPoseAt(boundary - 1e-6, ctx);
+      const b = cameraPoseAt(boundary + 1e-6, ctx);
+      expect(b.position[2]).toBeCloseTo(a.position[2], 3);
+      expect(b.position[1]).toBeCloseTo(a.position[1], 3);
+    }
+  });
+  it('the cascade returns as the panels fade, with an overlap in time but not at the extremes', () => {
+    expect(cascadePresence(4.5)).toBe(0);
+    expect(cascadePresence(5)).toBe(1);
+    expect(systemicPresence(4.5)).toBe(1);
+    expect(systemicPresence(5)).toBe(0);
+    const mid = REWIND_START + 0.08;
+    expect(cascadePresence(mid)).toBeGreaterThan(0);
     expect(systemicPresence(mid)).toBeGreaterThan(0);
   });
 });

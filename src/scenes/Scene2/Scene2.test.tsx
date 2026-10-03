@@ -35,7 +35,8 @@ describe('Scene2 (3D smoke test)', () => {
   it('mounts three tubes of flow particles and the calcium pool (the source cloud is Scene 1\'s gathered burst)', async () => {
     const renderer = await ReactThreeTestRenderer.create(<Scene2 />);
     const points = renderer.scene.findAll((n) => n.type === 'Points');
-    expect(points.length).toBe(4);
+    // Three tubes, the calcium pool and, for Scene 5, the dialysis circuit.
+    expect(points.length).toBe(5);
     expect(renderer.scene.findAll((n) => n.type === 'Mesh').length).toBeGreaterThan(3);
   });
 
@@ -89,7 +90,7 @@ describe('Scene2 (3D smoke test)', () => {
     });
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const renderer = await ReactThreeTestRenderer.create(<Scene2 />);
-    expect(renderer.scene.findAll((n) => n.type === 'Points').length).toBe(4);
+    expect(renderer.scene.findAll((n) => n.type === 'Points').length).toBe(5);
     spy.mockRestore();
   });
 
@@ -117,6 +118,71 @@ describe('Scene2 (3D smoke test)', () => {
     expect(alpha()).toBe(60 - CALCIUM.consumed);
     await step(0.1);
     expect(alpha()).toBe(60); // replays in reverse
+  });
+
+  describe('Scene 5: the rewound cascade and its interventions', () => {
+    type R = Awaited<ReturnType<typeof ReactThreeTestRenderer.create>>;
+    // The eased effects are read by the streams on the frame after they are written, so run the frames in two batches.
+    const settle = async (renderer: R, g: number) => {
+      useAppStore.setState({ globalProgress: g });
+      for (let i = 0; i < 2; i++) {
+        await ReactThreeTestRenderer.act(async () => {
+          await renderer.advanceFrames(20, 16);
+        });
+      }
+    };
+    const badgeGroups = (renderer: R) =>
+      renderer.scene.findAll((n) => n.instance.name === 'intervention-badge');
+    /** Total red-channel brightness of the purine stream's particles (the only stream with 120): a dissolve fades it. */
+    const purine = (renderer: R) => {
+      const stream = renderer.scene
+        .findAll((n) => n.type === 'Points')
+        .find((p) => (p.props.geometry as { getAttribute: (n: string) => { count: number } }).getAttribute('position').count === FLOW.purines.count)!;
+      const col = (stream.props.geometry as { getAttribute: (n: string) => { array: Float32Array } }).getAttribute('color').array;
+      let sum = 0;
+      for (let i = 0; i < col.length; i += 3) sum += col[i];
+      return { sum };
+    };
+    afterEach(() => useAppStore.setState({ interventionState: {}, scrub: null }));
+
+    it('shows no badge in the rewind and all four in free play', async () => {
+      const renderer = await ReactThreeTestRenderer.create(<Scene2 />);
+      await settle(renderer, 5.05);
+      expect(badgeGroups(renderer)).toHaveLength(4);
+      expect(badgeGroups(renderer).filter((b) => b.instance.visible)).toHaveLength(0);
+      await settle(renderer, 5.9);
+      expect(badgeGroups(renderer).filter((b) => b.instance.visible)).toHaveLength(4);
+      await settle(renderer, 5.3);
+      expect(badgeGroups(renderer).filter((b) => b.instance.visible)).toHaveLength(1);
+    });
+
+    it('keeps the streams idle at T+0h and flowing once the cascade has run', async () => {
+      const renderer = await ReactThreeTestRenderer.create(<Scene2 />);
+      await settle(renderer, 5.05);
+      expect(purine(renderer).sum).toBe(0);
+      await settle(renderer, 5.9);
+      expect(purine(renderer).sum).toBeGreaterThan(30);
+    });
+
+    it('rasburicase dims the purine stream where it acts, and the effect eases back out', async () => {
+      const renderer = await ReactThreeTestRenderer.create(<Scene2 />);
+      await settle(renderer, 5.9);
+      const untreated = purine(renderer).sum;
+      useAppStore.setState({ interventionState: { rasburicase: true } });
+      await settle(renderer, 5.9);
+      expect(purine(renderer).sum).toBeLessThan(untreated * 0.98);
+      useAppStore.setState({ interventionState: {} });
+      await settle(renderer, 5.9);
+      expect(purine(renderer).sum).toBeGreaterThan(untreated * 0.99);
+    });
+
+    it('a scrubbed time of zero idles the streams again', async () => {
+      const renderer = await ReactThreeTestRenderer.create(<Scene2 />);
+      await settle(renderer, 5.9);
+      useAppStore.setState({ scrub: 0 });
+      await settle(renderer, 5.9);
+      expect(purine(renderer).sum).toBe(0);
+    });
   });
 
   it('exposes crystal counts that match the spec ranges', () => {

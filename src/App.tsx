@@ -19,6 +19,9 @@ import { ChipCluster, type ChipClusterPhase } from './components/ChipCluster/Chi
 import { ModeToggle } from './components/ModeToggle/ModeToggle';
 import { HighRiskBadge } from './components/HighRiskBadge/HighRiskBadge';
 import { forwardedWheelDelta } from './lib/wheelForward';
+import { Scene5Controls } from './scenes/Scene5/Scene5Controls';
+import { useScene5Labs } from './scenes/Scene5/useScene5Labs';
+import { SCENE5_INDEX } from './lib/scene5';
 import { SYSTEMIC_START } from './lib/timeline';
 import { labValuesAt, stepIndexFromProgress, timestampAt } from './lib/steps';
 import { FirstRunScrollHint } from './components/FirstRunScrollHint/FirstRunScrollHint';
@@ -51,6 +54,8 @@ function minimapHighlightFor(sceneIndex: number): string | string[] | 'full' | n
   if (sceneIndex === 3) return 'kidney';
   // Scene 4 shows the two consequences that matter most acutely: potassium (cardiac) and calcium (via phosphate).
   if (sceneIndex === 4) return ['K', 'PO4'];
+  // Scene 5 shows the whole cascade itself, so a map of it would only repeat (and cover) the picture.
+  if (sceneIndex === 5) return null;
   return 'full';
 }
 
@@ -116,10 +121,13 @@ export function App() {
 
   // Lab values follow the story position: all targets up to the active step, so deep links and skipped steps stay correct.
   const activeSceneIndex = activeScene?.index;
+  const inScene5 = activeSceneIndex === SCENE5_INDEX;
   useEffect(() => {
-    if (activeSceneIndex === undefined) return;
+    // Scene 5's labs are computed from the interventions that are on (see useScene5Labs).
+    if (activeSceneIndex === undefined || inScene5) return;
     setLabValues(labValuesAt(tlsContent.scenes, activeSceneIndex, stepIndex));
-  }, [activeSceneIndex, stepIndex, setLabValues]);
+  }, [activeSceneIndex, inScene5, stepIndex, setLabValues]);
+  const scene5Timestamp = useScene5Labs(inScene5, stepIndex);
 
   if (!webglSupported) {
     return (
@@ -170,7 +178,7 @@ export function App() {
 
   const sceneIndex = route.index;
   const scene = tlsContent.scenes[sceneIndex];
-  const timestamp = scene ? timestampAt(tlsContent.scenes, sceneIndex, stepIndex) : undefined;
+  const timestamp = sceneIndex === SCENE5_INDEX ? scene5Timestamp : scene ? timestampAt(tlsContent.scenes, sceneIndex, stepIndex) : undefined;
   const stepOrder = activeStep?.order ?? 0;
   const chipPhase: ChipClusterPhase =
     scene?.summaryStep !== undefined && stepOrder >= scene.summaryStep
@@ -261,6 +269,7 @@ export function App() {
               <ModeToggle toggle={toggle} value={modeSelection[scene.id] ?? toggle.defaultId} onChange={(id) => setMode(scene.id, id)} />
             </div>
           )}
+          {sceneIndex === SCENE5_INDEX && <Scene5Controls stepIndex={stepIndex} isMobile={isMobile} />}
           <div className={styles.bottomStack}>
             {scene && activeStep && (
               <CaptionBlock key={activeStep.id} sceneTitle={scene.title} caption={activeStep.caption} learnMore={activeStep.learnMore} />

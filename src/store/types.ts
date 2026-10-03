@@ -26,7 +26,10 @@ export interface AppState {
   theme: Theme;
   labValues: Record<string, number>;
   sideNavExpanded: boolean;
+  /** Scene 5: the viewer's own intervention settings (step 5.6). Hydration is 0–1; the others are on/off. */
   interventionState: Record<string, number | boolean>;
+  /** Scene 5: where the viewer has dragged the timeline, 0 (T+0h) to 1 (peak); null follows the story. */
+  scrub: number | null;
   /** The chosen option of each scene's mode toggle, keyed by scene id. */
   modeSelection: Record<string, string>;
   /** Which model tier to load: 'high' (default) or 'standard' (lighter files). */
@@ -55,6 +58,7 @@ export interface AppActions {
   setMode: (sceneId: string, optionId: string) => void;
   setInterventionState: (id: string, value: number | boolean) => void;
   resetInterventions: () => void;
+  setScrub: (tau: number | null) => void;
   setModelQuality: (quality: ModelQuality) => void;
   toggleModelQuality: () => void;
   setReducedMotion: (reduced: boolean) => void;
