@@ -29,7 +29,7 @@ export const scene3: SceneDefinition = {
       labValues: [{ metricId: 'Cr', value: 1.4 }],
       learnMore: {
         heading: 'Crystal obstruction as primary mechanism',
-        body: 'Mechanical obstruction by crystal accumulation was historically considered the dominant mechanism of TLS-associated AKI. Recent autopsy and biopsy studies (Zafrani et al., JASN 2023) have complicated this picture — crystal deposits are sometimes absent despite severe AKI. Crystal-independent mechanisms are likely co-dominant.',
+        body: 'Mechanical obstruction by crystal accumulation was historically considered the dominant mechanism of TLS-associated AKI. Recent autopsy and biopsy studies (Arnaud et al., JASN 2022) have complicated this picture — crystal deposits are sometimes absent despite severe AKI. Crystal-independent mechanisms are likely co-dominant.',
         citations: cite('6', '7'),
       },
     },

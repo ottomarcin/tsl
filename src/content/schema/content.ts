@@ -3,6 +3,7 @@ import type { SceneDefinition } from './scene';
 import type { CascadeTopology } from './cascade';
 import type { InterventionDefinition } from './intervention';
 import type { LandingContent } from './landing';
+import type { EndCardContent } from './endCard';
 import type { ModelManifest } from './models';
 
 /**
@@ -12,6 +13,7 @@ import type { ModelManifest } from './models';
  */
 export interface DiseaseContent {
   landing: LandingContent;
+  endCard: EndCardContent;
   metrics: DiseaseMetric[];
   scenes: SceneDefinition[];
   cascade: CascadeTopology;

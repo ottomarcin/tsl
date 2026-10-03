@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAppStore } from './useAppStore';
+import { END_PROGRESS } from './types';
 
 const initialState = useAppStore.getState();
 
@@ -77,10 +78,48 @@ describe('useAppStore', () => {
     useAppStore.getState().setSceneProgress(0.5);
     useAppStore.getState().goToEnd();
     expect(useAppStore.getState().route).toEqual({ kind: 'end' });
-    expect(useAppStore.getState().sceneProgress).toBe(0);
+    // The end card sits over the end of the last scene.
+    expect(useAppStore.getState().sceneProgress).toBe(END_PROGRESS);
 
     useAppStore.getState().goToLanding();
     expect(useAppStore.getState().route).toEqual({ kind: 'landing' });
+  });
+
+  it('goToEnd scrolls the last scene to its end (a flight from a scene, a cut when already elsewhere)', () => {
+    const scrollToSceneProgress = vi.fn();
+    useAppStore.setState({ scrollApi: { scrollToPage: vi.fn(), scrollToSceneProgress, scrollBy: vi.fn() }, route: { kind: 'scene', index: 2 } });
+    useAppStore.getState().goToEnd();
+    expect(scrollToSceneProgress).toHaveBeenLastCalledWith(5, END_PROGRESS, true);
+    useAppStore.getState().goToEnd();
+    expect(scrollToSceneProgress).toHaveBeenLastCalledWith(5, END_PROGRESS, false);
+    expect(useAppStore.getState().globalProgress).toBeCloseTo(5 + END_PROGRESS, 9);
+    useAppStore.setState({ scrollApi: null });
+  });
+
+  it('a scroll API that registers while the route is the end card is put on the end of the last scene', () => {
+    const scrollToPage = vi.fn();
+    useAppStore.setState({ route: { kind: 'end' } });
+    useAppStore.getState().registerScrollApi({ scrollToPage, scrollToSceneProgress: vi.fn(), scrollBy: vi.fn() });
+    expect(scrollToPage).toHaveBeenCalledWith(5, false, END_PROGRESS);
+    useAppStore.getState().registerScrollApi(null);
+  });
+
+  it('restart returns to the landing screen with everything the visitor changed put back', () => {
+    useAppStore.setState({ route: { kind: 'end' } });
+    useAppStore.getState().setInterventionState('dialysis', true);
+    useAppStore.getState().setScrub(0.3);
+    useAppStore.getState().setMode('scene-3', 'cytotoxicity');
+    useAppStore.getState().setLabValue('K', 6.3);
+    useAppStore.getState().setGlobalProgress(5.9);
+    useAppStore.getState().restart();
+    const s = useAppStore.getState();
+    expect(s.route).toEqual({ kind: 'landing' });
+    expect(s.interventionState).toEqual({});
+    expect(s.scrub).toBeNull();
+    expect(s.modeSelection).toEqual({});
+    expect(s.labValues).toEqual({});
+    expect(s.globalProgress).toBe(0);
+    expect(s.sceneProgress).toBe(0);
   });
 
   describe('theme', () => {

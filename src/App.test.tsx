@@ -113,13 +113,78 @@ describe('App', () => {
     expect(screen.getByRole('img', { name: /Cascade progress minimap/ })).toBeInTheDocument();
   });
 
-  it('shows a placeholder for the end card when the route is /end', async () => {
-    window.history.replaceState(null, '', '/end');
-    const { App } = await setUpApp(true);
-    render(<App />);
-    // SideNav also has an "End card" nav item, so match the placeholder's exact copy, not a substring.
-    expect(screen.getByText('End card — Epic 9')).toBeInTheDocument();
-    expect(screen.queryByTestId('mock-scroll-canvas')).not.toBeInTheDocument();
+  describe('the end card', () => {
+    async function openEnd() {
+      window.history.replaceState(null, '', '/end');
+      const { App, useAppStore } = await setUpApp(true);
+      const utils = render(<App />);
+      return { ...utils, useAppStore };
+    }
+
+    it('sits over the last scene, which stays mounted behind it', async () => {
+      await openEnd();
+      expect(screen.getByRole('heading', { level: 1, name: 'Tumor lysis syndrome' })).toBeInTheDocument();
+      expect(screen.getByTestId('mock-scroll-canvas')).toBeInTheDocument();
+      // No scene chrome on top of the card.
+      expect(screen.queryByRole('region', { name: 'Scene caption' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('slider')).not.toBeInTheDocument();
+    });
+
+    it('highlights "End card" in the side menu and preloads the last scene\'s models', async () => {
+      await openEnd();
+      const nav = screen.getByRole('navigation', { name: 'Scene navigation' });
+      expect(within(nav).getByRole('button', { name: /End card/ })).toHaveAttribute('aria-current', 'step');
+      expect(preloadScene).toHaveBeenCalledWith(expect.anything(), 5, expect.anything());
+    });
+
+    it('"Replay any scene" opens six cards, and choosing one jumps there and drops the card', async () => {
+      const { useAppStore } = await openEnd();
+      await userEvent.click(screen.getByRole('button', { name: 'Replay any scene' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Replay a scene' });
+      expect(within(dialog).getAllByRole('button')).toHaveLength(6 + 1); // six cards and the close button
+      await userEvent.click(within(dialog).getByRole('button', { name: new RegExp(tlsContent.scenes[2].title) }));
+      expect(useAppStore.getState().route).toEqual({ kind: 'scene', index: 2 });
+      expect(screen.queryByRole('heading', { name: 'Tumor lysis syndrome' })).not.toBeInTheDocument();
+    });
+
+    it('"View sources" opens the full reference list with outbound links', async () => {
+      await openEnd();
+      await userEvent.click(screen.getByRole('button', { name: 'View sources' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Sources' });
+      expect(within(dialog).getAllByRole('link')).toHaveLength(19);
+    });
+
+    it('"Restart" returns to the landing screen and puts back what the visitor changed', async () => {
+      const { useAppStore } = await openEnd();
+      await act(async () => {
+        useAppStore.getState().setInterventionState('dialysis', true);
+        useAppStore.getState().setScrub(0.4);
+      });
+      await userEvent.click(screen.getByRole('button', { name: 'Restart →' }));
+      expect(useAppStore.getState().route).toEqual({ kind: 'landing' });
+      expect(useAppStore.getState().interventionState).toEqual({});
+      expect(useAppStore.getState().scrub).toBeNull();
+      expect(screen.getByRole('button', { name: /Begin/ })).toBeInTheDocument();
+    });
+
+    it('does not forward the wheel to the scene behind it', async () => {
+      const { useAppStore, container } = await openEnd();
+      const scrollBy = vi.fn();
+      await act(async () => {
+        useAppStore.setState({ scrollApi: { scrollBy, scrollToPage: vi.fn(), scrollToSceneProgress: vi.fn() } });
+      });
+      const area = container.querySelector('[class*="mainArea"]')!;
+      area.dispatchEvent(new WheelEvent('wheel', { deltaY: 120, bubbles: true }));
+      expect(scrollBy).not.toHaveBeenCalled();
+    });
+
+    it('has no accessibility violations, with the card and with a dialog open', async () => {
+      const { container } = await openEnd();
+      expect(await axe(container)).toHaveNoViolations();
+      await userEvent.click(screen.getByRole('button', { name: 'View sources' }));
+      await screen.findByRole('dialog');
+      expect(await axe(document.body)).toHaveNoViolations();
+    });
   });
 
   describe('model quality toggle', () => {

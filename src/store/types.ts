@@ -8,7 +8,7 @@ export type JumpSource = 'nav' | 'popstate' | 'url' | 'scroll';
 
 export interface ScrollApi {
   /** `smooth` animates the scroll (nav clicks); otherwise the position jumps (deep links, back/forward). */
-  scrollToPage: (page: number, smooth?: boolean) => void;
+  scrollToPage: (page: number, smooth?: boolean, progress?: number) => void;
   /** Instantly scrolls to `progress` (0–1) within scene `page`. Used when something in the scene is dragged. */
   scrollToSceneProgress: (page: number, progress: number, smooth?: boolean) => void;
   /** Scrolls the experience by `deltaY` pixels, as if the wheel had turned over the scene itself. */
@@ -47,6 +47,8 @@ export interface AppActions {
   jumpToScene: (index: number, opts?: { source?: JumpSource; progress?: number }) => void;
   goToLanding: () => void;
   goToEnd: () => void;
+  /** Back to the landing screen with everything the visitor changed put back (interventions, scrubber, modes, labs). */
+  restart: () => void;
   setSceneProgress: (progress: number) => void;
   setGlobalProgress: (g: number) => void;
   setTheme: (theme: Theme) => void;
@@ -70,3 +72,5 @@ export interface AppActions {
 export type AppStore = AppState & AppActions;
 
 export const SCENE_COUNT = 6;
+/** Where in the last scene the end card sits: the end of Scene 5 behind it. */
+export const END_PROGRESS = 0.97;

@@ -22,6 +22,10 @@ import { forwardedWheelDelta } from './lib/wheelForward';
 import { Scene5Controls } from './scenes/Scene5/Scene5Controls';
 import { useScene5Labs } from './scenes/Scene5/useScene5Labs';
 import { SCENE5_INDEX } from './lib/scene5';
+import { EndCard } from './components/EndCard/EndCard';
+import { ReplaySceneModal } from './components/ReplaySceneModal/ReplaySceneModal';
+import { SourcesModal } from './components/SourcesModal/SourcesModal';
+import { allTlsCitations, sourceLink } from './content/tls/citations';
 import { SYSTEMIC_START } from './lib/timeline';
 import { labValuesAt, stepIndexFromProgress, timestampAt } from './lib/steps';
 import { FirstRunScrollHint } from './components/FirstRunScrollHint/FirstRunScrollHint';
@@ -91,12 +95,15 @@ export function App() {
   const setSideNavExpanded = useAppStore((s) => s.setSideNavExpanded);
   const { visible: hintVisible, dismiss: dismissHint } = useFirstRunHint();
   const [legendExpanded, setLegendExpanded] = useState(false);
+  const [replayOpen, setReplayOpen] = useState(false);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+  const restart = useAppStore((s) => s.restart);
 
   useRouteSync();
 
   // Warm the cache for the scene on screen and the next one, so a scroll into it never waits on the network. The
   // landing screen preloads Scene 0 while the visitor reads it. Changing the quality tier fetches the other files.
-  const preloadFrom = route.kind === 'scene' ? route.index : route.kind === 'landing' ? 0 : null;
+  const preloadFrom = route.kind === 'scene' ? route.index : route.kind === 'landing' ? 0 : tlsContent.scenes.length - 1;
   useEffect(() => {
     if (preloadFrom === null || !webglSupported) return;
     preloadScene(tlsContent.models, preloadFrom, modelQuality);
@@ -153,32 +160,11 @@ export function App() {
     );
   }
 
-  if (route.kind === 'end') {
-    return (
-      <div className={styles.sceneLayout}>
-        <SideNav
-          scenes={SIDE_NAV_SCENES}
-          currentSceneIndex={tlsContent.scenes.length}
-          expanded={sideNavExpanded}
-          onToggleExpanded={toggleSideNav}
-          onJumpToScene={jumpToScene}
-          onJumpToLanding={goToLanding}
-          onJumpToEnd={goToEnd}
-        />
-        <div className={styles.mainArea}>
-          <div className={styles.themeToggleFloating}>
-            <QualityToggle quality={modelQuality} onToggle={toggleModelQuality} />
-            <ThemeToggle theme={theme} onToggle={toggleTheme} />
-          </div>
-          <div className={styles.endPlaceholder}>End card — Epic 9</div>
-        </div>
-      </div>
-    );
-  }
-
-  const sceneIndex = route.index;
-  const scene = tlsContent.scenes[sceneIndex];
-  const timestamp = sceneIndex === SCENE5_INDEX ? scene5Timestamp : scene ? timestampAt(tlsContent.scenes, sceneIndex, stepIndex) : undefined;
+  // The end card sits over the last scene, which stays mounted behind it (so the canvas is never torn down on the way).
+  const isEnd = route.kind === 'end';
+  const sceneIndex = route.kind === 'scene' ? route.index : tlsContent.scenes.length - 1;
+  const scene = isEnd ? undefined : tlsContent.scenes[sceneIndex];
+  const timestamp = isEnd ? undefined : sceneIndex === SCENE5_INDEX ? scene5Timestamp : scene ? timestampAt(tlsContent.scenes, sceneIndex, stepIndex) : undefined;
   const stepOrder = activeStep?.order ?? 0;
   const chipPhase: ChipClusterPhase =
     scene?.summaryStep !== undefined && stepOrder >= scene.summaryStep
@@ -196,7 +182,7 @@ export function App() {
       <AssetLoadingBar active={assetsLoading} progress={assetProgress} />
       <SideNav
         scenes={SIDE_NAV_SCENES}
-        currentSceneIndex={sceneIndex}
+        currentSceneIndex={isEnd ? tlsContent.scenes.length : sceneIndex}
         currentStepIndex={stepIndex}
         onJumpToStep={(sceneI, stepI) => {
           setNavSheetOpen(false);
@@ -225,7 +211,7 @@ export function App() {
         onWheel={(e) => {
           // A wheel turn over the interface should still scroll the story (see lib/wheelForward).
           const delta = forwardedWheelDelta(e);
-          if (delta !== null) useAppStore.getState().scrollApi?.scrollBy(delta);
+          if (delta !== null && !isEnd) useAppStore.getState().scrollApi?.scrollBy(delta);
         }}
       >
         {isMobile && (
@@ -269,14 +255,15 @@ export function App() {
               <ModeToggle toggle={toggle} value={modeSelection[scene.id] ?? toggle.defaultId} onChange={(id) => setMode(scene.id, id)} />
             </div>
           )}
-          {sceneIndex === SCENE5_INDEX && <Scene5Controls stepIndex={stepIndex} isMobile={isMobile} />}
+          {sceneIndex === SCENE5_INDEX && !isEnd && <Scene5Controls stepIndex={stepIndex} isMobile={isMobile} />}
           <div className={styles.bottomStack}>
             {scene && activeStep && (
               <CaptionBlock key={activeStep.id} sceneTitle={scene.title} caption={activeStep.caption} learnMore={activeStep.learnMore} />
             )}
-            <ColorLegend items={LEGEND_ITEMS} expanded={legendExpanded} onToggleExpanded={() => setLegendExpanded((e) => !e)} />
+            {!isEnd && <ColorLegend items={LEGEND_ITEMS} expanded={legendExpanded} onToggleExpanded={() => setLegendExpanded((e) => !e)} />}
           </div>
         </div>
+        {!isEnd && (
         <LabStrip
           metrics={tlsContent.metrics}
           values={labValues}
@@ -287,7 +274,32 @@ export function App() {
           onJumpToStage={jumpToScene}
           reducedMotion={reducedMotion}
         />
+        )}
+        {isEnd && (
+          <EndCard
+            content={tlsContent.endCard}
+            onReplay={() => setReplayOpen(true)}
+            onSources={() => setSourcesOpen(true)}
+            onRestart={restart}
+          />
+        )}
       </div>
+      <ReplaySceneModal
+        open={replayOpen}
+        onOpenChange={setReplayOpen}
+        title={tlsContent.endCard.replayTitle}
+        variant={isMobile ? 'sheet' : 'modal'}
+        scenes={tlsContent.scenes.map((sc) => ({ index: sc.index, title: sc.title, summary: sc.steps[0].caption }))}
+        // A cut, not a flight back through every scene in between.
+        onPick={(i) => jumpToScene(i, { source: 'url' })}
+      />
+      <SourcesModal
+        open={sourcesOpen}
+        onOpenChange={setSourcesOpen}
+        title={tlsContent.endCard.sourcesTitle}
+        variant={isMobile ? 'sheet' : 'modal'}
+        sources={allTlsCitations.map((c) => ({ id: c.id, text: c.text, href: sourceLink(c) }))}
+      />
     </div>
   );
 }

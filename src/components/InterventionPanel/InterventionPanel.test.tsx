@@ -103,7 +103,7 @@ describe('InterventionPanel: what is shown is what the formula gives', () => {
   ];
   it.each(cases)('shows the folded counterfactual for %j', (state) => {
     const { unmount } = render(<InterventionPanel {...props({ state })} />);
-    const treated = tlsInterventions.reduce((acc, def) => def.applyEffect(acc, state), { ...baseline });
+    const treated = tlsInterventions.reduce<Record<string, number>>((acc, def) => def.applyEffect(acc, state), { ...baseline });
     for (const m of tlsMetrics) {
       const cells = within(row(m.label)).getAllByRole('cell');
       expect(cells[0]).toHaveTextContent(baseline[m.id as keyof typeof baseline].toFixed(m.decimalPlaces));

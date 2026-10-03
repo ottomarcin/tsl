@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { AppStore, JumpSource } from './types';
-import { SCENE_COUNT } from './types';
+import { END_PROGRESS, SCENE_COUNT } from './types';
 import { persistTheme, readDomTheme } from '../lib/theme';
 import { persistQuality, resolveInitialQuality } from '../lib/quality';
 
@@ -49,7 +49,28 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   goToEnd() {
-    set({ route: { kind: 'end' }, routeSource: 'nav', sceneProgress: 0 });
+    // The end card sits over the end of the last scene, which stays on screen behind it.
+    const smooth = !get().reducedMotion && get().route.kind === 'scene';
+    set({
+      route: { kind: 'end' },
+      routeSource: 'nav',
+      sceneProgress: END_PROGRESS,
+      ...(smooth ? {} : { globalProgress: SCENE_COUNT - 1 + END_PROGRESS }),
+    });
+    get().scrollApi?.scrollToSceneProgress(SCENE_COUNT - 1, END_PROGRESS, smooth);
+  },
+
+  restart() {
+    set({
+      route: { kind: 'landing' },
+      routeSource: 'nav',
+      sceneProgress: 0,
+      globalProgress: 0,
+      labValues: {},
+      interventionState: {},
+      scrub: null,
+      modeSelection: {},
+    });
   },
 
   setSceneProgress(progress: number) {
@@ -135,6 +156,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const route = get().route;
     if (api && route.kind === 'scene') {
       api.scrollToPage(route.index);
+    } else if (api && route.kind === 'end') {
+      api.scrollToPage(SCENE_COUNT - 1, false, END_PROGRESS);
     }
   },
 }));

@@ -5,7 +5,7 @@
  * no seams. Amplitudes are normalised so the R wave is about 1.
  *
  * The shapes are illustrative of the textbook pattern, not digitised recordings, and were checked against published
- * descriptions (LITFL hyperkalaemia ECG library; ECG Guru "sine wave"; Montague et al. 2008; Mattu et al. 2014):
+ * descriptions (LITFL hyperkalaemia ECG library; ECG Guru "sine wave"; Montague et al. 2008; Mattu et al. 2000):
  *   - peaked T: tall, narrow-based, symmetric ("tented"), the earliest change (about 5.3–6.0 mmol/L in LITFL);
  *   - then the P wave flattens and the PR interval lengthens, with the T wave still peaked;
  *   - then the QRS widens (broad, "bizarre"), the P wave is gone, and the T wave runs into the QRS so that no ST

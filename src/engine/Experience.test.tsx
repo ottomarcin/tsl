@@ -54,6 +54,11 @@ describe('Experience: what is mounted', () => {
     expect(names(renderer)).toEqual(expected);
   });
 
+  it('mounts the last scene behind the end card', async () => {
+    useAppStore.setState({ route: { kind: 'end' } });
+    expect(names(await mount())).toEqual(['tumor', 'cascade', 'systemic']);
+  });
+
   it('mounts the cascade one scene early so its models are ready when the camera arrives', async () => {
     setRoute(1);
     expect(names(await mount())).toContain('cascade');

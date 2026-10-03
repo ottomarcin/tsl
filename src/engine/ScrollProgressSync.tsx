@@ -24,7 +24,7 @@ export function ScrollProgressSync() {
   const ready = useRef(false);
   // A jump requested before the scroll proxy has layout (deep links mount the canvas and ask for a page in the same
   // commit, while scrollHeight is still 0) is parked here and applied once the proxy is scrollable.
-  const pendingPage = useRef<number | null>(null);
+  const pendingPage = useRef<{ page: number; progress: number } | null>(null);
   // After applying a jump, ignore the offset until the (damped) scroll catches up with the target page, so the stale
   // value can't undo the jump. Capped so a failed scroll can never freeze the sync.
   const settling = useRef<{ page: number; frames: number } | null>(null);
@@ -57,20 +57,20 @@ export function ScrollProgressSync() {
         el.scrollTop = offset * max;
         cutTo(offset);
       },
-      scrollToPage: (page: number, smooth = false) => {
+      scrollToPage: (page: number, smooth = false, progress = 0) => {
         const el = scroll.el;
         const max = el.scrollHeight - el.clientHeight;
         if (max > 0) {
-          const top = (page / SCENE_COUNT) * max;
-          if (smooth) el.scrollTo({ top, behavior: 'smooth' });
+          const offset = (page + progress) / SCENE_COUNT;
+          if (smooth) el.scrollTo({ top: offset * max, behavior: 'smooth' });
           else {
-            el.scrollTop = top;
-            cutTo(page / SCENE_COUNT);
+            el.scrollTop = offset * max;
+            cutTo(offset);
           }
           pendingPage.current = null;
           settling.current = { page, frames: 180 };
         } else {
-          pendingPage.current = page;
+          pendingPage.current = { page, progress };
         }
       },
     });
@@ -88,9 +88,10 @@ export function ScrollProgressSync() {
       const el = scroll.el;
       const max = el.scrollHeight - el.clientHeight;
       if (max <= 0) return;
-      el.scrollTop = (pendingPage.current / SCENE_COUNT) * max;
-      cutTo(pendingPage.current / SCENE_COUNT);
-      lastScene.current = pendingPage.current;
+      const { page, progress } = pendingPage.current;
+      el.scrollTop = ((page + progress) / SCENE_COUNT) * max;
+      cutTo((page + progress) / SCENE_COUNT);
+      lastScene.current = page;
       pendingPage.current = null;
       settling.current = { page: lastScene.current, frames: 180 };
       return;
@@ -98,6 +99,8 @@ export function ScrollProgressSync() {
     // The 3D scene follows the real (damped) scroll position every frame, even while a smooth nav click is flying
     // through the scenes in between: that flight is the point of a continuous experience.
     setGlobalProgress(scroll.offset * SCENE_COUNT);
+    // Behind the end card the scene is only a backdrop: scrolling it must not turn the route back into a scene.
+    if (useAppStore.getState().route.kind === 'end') return;
     if (settling.current) {
       const { page, frames } = settling.current;
       const reached = Math.min(SCENE_COUNT - 1, Math.floor(scroll.offset * SCENE_COUNT)) === page;

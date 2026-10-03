@@ -12,6 +12,7 @@ import { cameraDistanceFor, cameraDistanceForExtent, useViewShift } from '../sce
 import { useGetG } from '../scenes/shared/useGetG';
 import { TumorStage } from '../scenes/Tumor/TumorStage';
 import { useAppStore } from '../store/useAppStore';
+import { SCENE_COUNT } from '../store/types';
 
 /** How far the picture moves aside for the Scene 5 panel, as a fraction of the canvas width. */
 const PANEL_SHIFT = 0.17;
@@ -33,7 +34,7 @@ export function Experience({ viewShift = 0 }: ExperienceProps) {
   const reducedMotion = useAppStore((s) => s.reducedMotion);
   const getG = useGetG(reducedMotion);
   // In free play (step 5.6) the intervention panel takes the right edge; the picture moves aside to stay clear of it.
-  const panelOpen = useCallback(() => aspect >= 1.2 && getG() >= 5 && scene5Step(getG()) === FREE_PLAY_STEP, [aspect, getG]);
+  const panelOpen = useCallback(() => aspect >= 1.2 && getG() >= 5 && scene5Step(getG()) === FREE_PLAY_STEP && useAppStore.getState().route.kind === 'scene', [aspect, getG]);
   useViewShift(viewShift, () => (panelOpen() ? -PANEL_SHIFT : 0));
 
   const framing = useMemo<CameraContext>(
@@ -64,7 +65,8 @@ export function Experience({ viewShift = 0 }: ExperienceProps) {
   useLayoutEffect(place, [camera, framing]);
   useFrame(place);
 
-  const index = route.kind === 'scene' ? route.index : 0;
+  // Behind the end card the last scene is on screen.
+  const index = route.kind === 'scene' ? route.index : route.kind === 'end' ? SCENE_COUNT - 1 : 0;
   // The cascade stays mounted to the end: Scene 5 brings it back.
   const cascade = index >= 1;
   const nephron = index >= 2 && index <= 3;
