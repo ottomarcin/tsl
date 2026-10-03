@@ -2,10 +2,10 @@ import { useEffect } from 'react';
 import { useThree } from '@react-three/fiber';
 
 const FOV_HALF_TAN = Math.tan((50 / 2) * (Math.PI / 180));
-/** Radius of the mass plus margin for UI overlays. */
+/** Radius of the tumor mass plus margin for UI overlays. */
 const FRAME_RADIUS = 6.2;
 
-/** Camera distance that keeps the whole mass inside both the vertical and horizontal field of view. */
+/** Camera distance that keeps the whole tumor mass inside both the vertical and horizontal field of view. */
 export function cameraDistanceFor(aspect: number): number {
   return Math.max(14, FRAME_RADIUS / (FOV_HALF_TAN * Math.min(1, aspect)));
 }
@@ -22,14 +22,13 @@ export function cameraDistanceForExtent(aspect: number, { halfWidth, halfHeight 
 }
 
 /**
- * Applies the screen-shift for layouts with a left caption column and returns the base camera distance for the
- * current aspect ratio. Resets the view offset on unmount so the next scene starts clean.
+ * Applies the screen-shift for layouts with a left caption column (the image moves right by this fraction of the
+ * canvas width). Resets on unmount so nothing later inherits it.
  */
-export function useSceneFraming(viewShift: number, extent?: SceneExtent): number {
+export function useViewShift(viewShift: number): void {
   const camera = useThree((s) => s.camera);
   const width = useThree((s) => s.size.width);
   const height = useThree((s) => s.size.height);
-  const aspect = width / Math.max(1, height);
 
   useEffect(() => {
     if (viewShift) camera.setViewOffset(width, height, -viewShift * width, 0, width, height);
@@ -40,6 +39,4 @@ export function useSceneFraming(viewShift: number, extent?: SceneExtent): number
       camera.updateProjectionMatrix();
     };
   }, [camera, width, height, viewShift]);
-
-  return extent ? cameraDistanceForExtent(aspect, extent) : cameraDistanceFor(aspect);
 }

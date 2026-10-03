@@ -8,6 +8,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   route: { kind: 'landing' },
   routeSource: 'url',
   sceneProgress: 0,
+  globalProgress: 0,
   theme: readDomTheme(),
   labValues: {},
   sideNavExpanded: true,
@@ -21,9 +22,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const clamped = Math.max(0, Math.min(SCENE_COUNT - 1, index));
     const source = opts?.source ?? 'nav';
     // One update carries the route and its progress, so no frame renders the new scene with the old scene's progress.
-    set({ route: { kind: 'scene', index: clamped }, routeSource: source, sceneProgress: opts?.progress ?? 0 });
+    const smooth = source === 'nav' && !get().reducedMotion;
+    set({
+      route: { kind: 'scene', index: clamped },
+      routeSource: source,
+      sceneProgress: opts?.progress ?? 0,
+      // A cut (deep link, back/forward, reduced motion) lands the 3D scene on the target at once; a smooth nav click
+      // leaves it to fly there with the scroll position.
+      ...(source !== 'scroll' && !smooth ? { globalProgress: clamped + (opts?.progress ?? 0) } : {}),
+    });
     if (source !== 'scroll') {
-      get().scrollApi?.scrollToPage(clamped, source === 'nav' && !get().reducedMotion);
+      get().scrollApi?.scrollToPage(clamped, smooth);
     }
   },
 
@@ -39,6 +48,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // Called every frame while scrolling: skip no-op writes so subscribers aren't woken for nothing.
     if (Math.abs(progress - get().sceneProgress) < 1e-4) return;
     set({ sceneProgress: progress });
+  },
+
+  setGlobalProgress(g: number) {
+    if (Math.abs(g - get().globalProgress) < 1e-5) return;
+    set({ globalProgress: g });
   },
 
   setTheme(theme) {

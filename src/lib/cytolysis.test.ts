@@ -4,6 +4,8 @@ import {
   PARTICLES,
   WAVE,
   arrivalProgress,
+  CLOUD_BRIGHTNESS,
+  buildCloudTargets,
   buildParticleVelocities,
   cellState,
   fillParticleBuffers,
@@ -93,6 +95,65 @@ describe('cellState', () => {
   });
   it('is reversible: a pure function of progress', () => {
     expect(cellState(0.4, 1)).toEqual(cellState(0.4, 1));
+  });
+});
+
+describe('hand-over to the cascade source cloud', () => {
+  const cells = generateMassLayout({ count: 6, sigma: 1.5, minSpacing: 0.7, seed: 3 });
+  const coords = cells.map((c) => c.position[0]);
+  const vel = buildParticleVelocities(cells.length, 11);
+  const n = cells.length * PARTICLES.perCellPerSystem;
+  const targets = buildCloudTargets(n, 5);
+  const fill = (amount: number, progress = 1) => {
+    const positions = new Float32Array(n * 3);
+    const colors = new Float32Array(n * 3);
+    fillParticleBuffers(positions, colors, cells, coords, vel, [1, 1, 1], progress, 3, { targets, keepEvery: 10, amount });
+    return { positions, colors };
+  };
+  it('targets are a deterministic blob centred on the origin', () => {
+    expect(buildCloudTargets(50, 5)).toEqual(buildCloudTargets(50, 5));
+    const t = buildCloudTargets(2000, 5);
+    let mx = 0;
+    for (let i = 0; i < 2000; i++) mx += t[i * 3];
+    expect(Math.abs(mx / 2000)).toBeLessThan(0.1);
+  });
+  it('amount 0 leaves the burst exactly as it was', () => {
+    const plain = new Float32Array(n * 3);
+    const plainCols = new Float32Array(n * 3);
+    fillParticleBuffers(plain, plainCols, cells, coords, vel, [1, 1, 1], 1, 3);
+    const { positions, colors } = fill(0);
+    expect(Array.from(positions)).toEqual(Array.from(plain));
+    expect(Array.from(colors)).toEqual(Array.from(plainCols));
+  });
+  it('amount 1 puts every particle on its target', () => {
+    const { positions } = fill(1);
+    for (let i = 0; i < n; i++) {
+      expect(positions[i * 3]).toBeCloseTo(targets[i * 3], 5);
+      expect(positions[i * 3 + 1]).toBeCloseTo(targets[i * 3 + 1], 5);
+    }
+  });
+  it('keeps every Nth particle at a steady brightness and fades the rest to nothing', () => {
+    const { colors } = fill(1);
+    for (let i = 0; i < n; i++) {
+      if (i % 10 === 0) expect(colors[i * 3]).toBeCloseTo(CLOUD_BRIGHTNESS, 5);
+      else expect(colors[i * 3]).toBeCloseTo(0, 5);
+    }
+  });
+  it('survivors are visible even if their burst lifetime had ended', () => {
+    // Long after the burst every particle is dead; the survivors must still appear in the cloud.
+    const { colors } = fill(1, 5);
+    expect(colors[0]).toBeCloseTo(CLOUD_BRIGHTNESS, 5);
+  });
+  it('moves monotonically from the burst toward the cloud', () => {
+    const d = (amount: number) => {
+      const { positions } = fill(amount);
+      let sum = 0;
+      for (let i = 0; i < n; i++) sum += Math.hypot(positions[i * 3] - targets[i * 3], positions[i * 3 + 1] - targets[i * 3 + 1], positions[i * 3 + 2] - targets[i * 3 + 2]);
+      return sum;
+    };
+    expect(d(0.25)).toBeLessThan(d(0));
+    expect(d(0.6)).toBeLessThan(d(0.25));
+    expect(d(1)).toBeLessThan(1e-3);
   });
 });
 

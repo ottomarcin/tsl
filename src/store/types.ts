@@ -19,6 +19,8 @@ export interface AppState {
   routeSource: JumpSource;
   /** 0–1 progress within the current scene. */
   sceneProgress: number;
+  /** Position on the whole experience in scene units (0 = start of Scene 0, 2.5 = halfway through Scene 2). */
+  globalProgress: number;
   theme: Theme;
   labValues: Record<string, number>;
   sideNavExpanded: boolean;
@@ -37,6 +39,7 @@ export interface AppActions {
   goToLanding: () => void;
   goToEnd: () => void;
   setSceneProgress: (progress: number) => void;
+  setGlobalProgress: (g: number) => void;
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
   setSideNavExpanded: (expanded: boolean) => void;

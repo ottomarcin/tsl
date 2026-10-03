@@ -3,6 +3,7 @@ import ReactThreeTestRenderer from '@react-three/test-renderer';
 import type { ReactNode } from 'react';
 import { fakeCellGltf } from '../../test/fakeModel';
 import { useAppStore } from '../../store/useAppStore';
+import { SCENE2_OFFSET } from '../../lib/timeline';
 import { CALCIUM, CRYSTALS, FLOW } from '../../lib/cascade';
 
 const useModel = vi.fn();
@@ -19,18 +20,23 @@ const { Scene2 } = await import('./Scene2');
 beforeEach(() => useModel.mockReturnValue(fakeCellGltf()));
 afterEach(() => {
   useModel.mockReset();
-  useAppStore.setState({ sceneProgress: 0 });
+  useAppStore.setState({ globalProgress: 0, sceneProgress: 0 });
 });
 
 const names = (renderer: Awaited<ReturnType<typeof ReactThreeTestRenderer.create>>) => renderer.scene.children.map((c) => c.type);
 
 describe('Scene2 (3D smoke test)', () => {
-  it('mounts the source cloud, three tubes of flow particles, the calcium pool and the models', async () => {
+  it('is built around its own origin, placed so the source cloud sits at the world origin', async () => {
+    const renderer = await ReactThreeTestRenderer.create(<Scene2 />);
+    const group = renderer.scene.children[0].instance as unknown as { position: { toArray: () => number[] } };
+    expect(group.position.toArray()).toEqual(SCENE2_OFFSET);
+  });
+
+  it('mounts three tubes of flow particles and the calcium pool (the source cloud is Scene 1\'s gathered burst)', async () => {
     const renderer = await ReactThreeTestRenderer.create(<Scene2 />);
     const points = renderer.scene.findAll((n) => n.type === 'Points');
-    // Source cloud + 3 flow streams + calcium pool.
-    expect(points.length).toBe(5);
-    expect(renderer.scene.children.length).toBeGreaterThan(8);
+    expect(points.length).toBe(4);
+    expect(renderer.scene.findAll((n) => n.type === 'Mesh').length).toBeGreaterThan(3);
   });
 
   it('gives each stream its spec particle count', async () => {
@@ -58,7 +64,7 @@ describe('Scene2 (3D smoke test)', () => {
   it('runs across the whole progress range without throwing', async () => {
     const renderer = await ReactThreeTestRenderer.create(<Scene2 />);
     for (const p of [0, 0.1, 0.3, 0.45, 0.6, 0.8, 0.95, 1, 0.4, 0]) {
-      useAppStore.setState({ sceneProgress: p });
+      useAppStore.setState({ globalProgress: 2 + p });
       await ReactThreeTestRenderer.act(async () => {
         await renderer.advanceFrames(2, 16);
       });
@@ -66,11 +72,11 @@ describe('Scene2 (3D smoke test)', () => {
     expect(renderer.scene.children.length).toBeGreaterThan(0);
   });
 
-  it('under reduced motion draws no flowing particles, only the cloud and the pool', async () => {
+  it('under reduced motion draws no flowing particles, only the pool', async () => {
     const renderer = await ReactThreeTestRenderer.create(<Scene2 reducedMotion />);
-    expect(renderer.scene.findAll((n) => n.type === 'Points')).toHaveLength(2);
+    expect(renderer.scene.findAll((n) => n.type === 'Points')).toHaveLength(1);
     for (const p of [0.1, 0.5, 0.9]) {
-      useAppStore.setState({ sceneProgress: p });
+      useAppStore.setState({ globalProgress: 2 + p });
       await ReactThreeTestRenderer.act(async () => {
         await renderer.advanceFrames(2, 16);
       });
@@ -83,7 +89,7 @@ describe('Scene2 (3D smoke test)', () => {
     });
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const renderer = await ReactThreeTestRenderer.create(<Scene2 />);
-    expect(renderer.scene.findAll((n) => n.type === 'Points').length).toBe(5);
+    expect(renderer.scene.findAll((n) => n.type === 'Points').length).toBe(4);
     spy.mockRestore();
   });
 
@@ -100,7 +106,7 @@ describe('Scene2 (3D smoke test)', () => {
       return visible;
     };
     const step = async (p: number) => {
-      useAppStore.setState({ sceneProgress: p });
+      useAppStore.setState({ globalProgress: 2 + p });
       await ReactThreeTestRenderer.act(async () => {
         await renderer.advanceFrames(1, 16);
       });

@@ -17,6 +17,7 @@ export function ScrollProgressSync() {
   const registerScrollApi = useAppStore((s) => s.registerScrollApi);
   const jumpToScene = useAppStore((s) => s.jumpToScene);
   const setSceneProgress = useAppStore((s) => s.setSceneProgress);
+  const setGlobalProgress = useAppStore((s) => s.setGlobalProgress);
   const lastScene = useRef(-1);
   // R3F can run a frame before this component's effects flush; until the scroll API is registered (and the current
   // route applied to it) the scroll offset is meaningless and must not be written back to the route.
@@ -28,6 +29,14 @@ export function ScrollProgressSync() {
   // value can't undo the jump. Capped so a failed scroll can never freeze the sync.
   const settling = useRef<{ page: number; frames: number } | null>(null);
 
+  // Puts the damped scroll offset on the target at once. Without this, a cut (deep link, back/forward, a dragged
+  // control) would make the whole 3D scene fly there from wherever the old offset was. (`scroll.scroll` is drei's
+  // un-damped target; it exists at runtime but is missing from its types.)
+  const cutTo = (offset: number) => {
+    (scroll as unknown as { scroll: { current: number } }).scroll.current = offset;
+    scroll.offset = offset;
+  };
+
   useEffect(() => {
     // Horizontal drags (the Scene 1 wavefront) must reach the pointer handlers; only vertical pans scroll natively.
     scroll.el.style.touchAction = 'pan-y';
@@ -35,7 +44,10 @@ export function ScrollProgressSync() {
       scrollToSceneProgress: (page: number, progress: number) => {
         const el = scroll.el;
         const max = el.scrollHeight - el.clientHeight;
-        if (max > 0) el.scrollTop = ((page + progress) / SCENE_COUNT) * max;
+        if (max <= 0) return;
+        const offset = (page + progress) / SCENE_COUNT;
+        el.scrollTop = offset * max;
+        cutTo(offset);
       },
       scrollToPage: (page: number, smooth = false) => {
         const el = scroll.el;
@@ -43,7 +55,10 @@ export function ScrollProgressSync() {
         if (max > 0) {
           const top = (page / SCENE_COUNT) * max;
           if (smooth) el.scrollTo({ top, behavior: 'smooth' });
-          else el.scrollTop = top;
+          else {
+            el.scrollTop = top;
+            cutTo(page / SCENE_COUNT);
+          }
           pendingPage.current = null;
           settling.current = { page, frames: 180 };
         } else {
@@ -66,11 +81,15 @@ export function ScrollProgressSync() {
       const max = el.scrollHeight - el.clientHeight;
       if (max <= 0) return;
       el.scrollTop = (pendingPage.current / SCENE_COUNT) * max;
+      cutTo(pendingPage.current / SCENE_COUNT);
       lastScene.current = pendingPage.current;
       pendingPage.current = null;
       settling.current = { page: lastScene.current, frames: 180 };
       return;
     }
+    // The 3D scene follows the real (damped) scroll position every frame, even while a smooth nav click is flying
+    // through the scenes in between: that flight is the point of a continuous experience.
+    setGlobalProgress(scroll.offset * SCENE_COUNT);
     if (settling.current) {
       const { page, frames } = settling.current;
       const reached = Math.min(SCENE_COUNT - 1, Math.floor(scroll.offset * SCENE_COUNT)) === page;

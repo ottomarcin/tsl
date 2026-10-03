@@ -14,12 +14,14 @@ export const tlsModels: ModelManifest = {
   basePath: 'models/',
   version: '1',
   models: {
+    // The plain cell. The scenes draw the rupture cell instead (its rest pose is this cell, and one model for Scenes 0
+    // and 1 means nothing swaps at the boundary), so this is no longer preloaded; it stays for the model gallery.
     cell: {
       standard: 's0_cell_base_tex.glb',
       high: 'hd/s0_cell_base.glb',
       lod: 's0_cell_base_lod1.glb',
       drawOrder: CELL_DRAW_ORDER,
-      scenes: [0, 1],
+      scenes: [],
       usages: ['instanced'],
     },
     heartIcon: {
@@ -62,7 +64,7 @@ export const tlsModels: ModelManifest = {
       high: 'hd/s1_cell_rupture.glb',
       lod: 's1_cell_rupture_lod1.glb',
       drawOrder: CELL_DRAW_ORDER,
-      scenes: [1],
+      scenes: [0, 1],
       usages: ['instanced'],
     },
   },

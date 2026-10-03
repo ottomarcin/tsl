@@ -1,26 +1,34 @@
 import { useFrame } from '@react-three/fiber';
-import { Color, type Group } from 'three';
+import { Color, type Group, type MeshStandardMaterial } from 'three';
 import { ScenePointLabel } from '../../components/ScenePointLabel/ScenePointLabel';
 import { applyGlow, captureEmissive } from '../../graphics/emissive';
 import { HEART_POS, KIDNEY_POS, heartArrival, kidneyLoad, type Vec3 } from '../../lib/cascade';
 import { useModelClone } from './useModelClone';
-import { useEffect, useRef } from 'react';
+import { useMemo, useRef, type RefObject } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 
 export interface ProgressProps {
+  /** Progress through the cascade scene (0–1). */
   getProgress: () => number;
   reducedMotion: boolean;
+}
+
+export interface PresenceProps {
+  /** 0–1: how much of the static scenery has faded in as the camera arrives. */
+  getPresence: () => number;
 }
 
 const AMBER = new Color('#E8A23D');
 
 /** Stylised heart at the end of the K⁺ tube: pulses at a resting rate, flushes amber as potassium arrives. */
-export function HeartIcon({ getProgress, reducedMotion, label }: ProgressProps & { label: string }) {
+export function HeartIcon({ getProgress, getPresence, reducedMotion, label }: ProgressProps & PresenceProps & { label: string }) {
   const { root, materials } = useModelClone('heartIcon');
   const group = useRef<Group>(null);
   const rest = useRef(materials.map(captureEmissive));
+  const fade = useFade(materials, group, getPresence);
 
   useFrame(({ clock }) => {
+    fade();
     const arrival = heartArrival(getProgress());
     const beat = Math.sin((2 * Math.PI * clock.elapsedTime) / 0.9);
     // ~67 bpm, ±2%.
@@ -36,25 +44,23 @@ export function HeartIcon({ getProgress, reducedMotion, label }: ProgressProps &
       <group ref={group} position={HEART_POS} scale={1.55}>
         <primitive object={root} />
       </group>
-      <ScenePointLabel position={[HEART_POS[0] + 1.9, HEART_POS[1] - 0.2, 0]} text={label} color="var(--mol-K)" />
+      <ScenePointLabel position={[HEART_POS[0] + 1.9, HEART_POS[1] - 0.2, 0]} text={label} color="var(--mol-K)" getOpacity={getPresence} />
     </>
   );
 }
 
 /** Bean-shaped kidney at the bottom of the frame, half out of view; glows from within as crystals arrive. */
-export function Kidney({ getProgress, label }: Pick<ProgressProps, 'getProgress'> & { label: string }) {
+export function Kidney({ getProgress, getPresence, label }: Pick<ProgressProps, 'getProgress'> & PresenceProps & { label: string }) {
   const { root, materials } = useModelClone('kidney');
   const rest = useRef(materials.map(captureEmissive));
   const GLOW = useRef(new Color('#C9C0A8'));
   const light = useAppStore((st) => st.theme === 'light');
-  const restOpacity = useRef(materials.map((m) => m.opacity));
-
+  const group = useRef<Group>(null);
   // The file is 50% translucent so crystals can be seen entering it; on the pale canvas that washes it to lavender mist.
-  useEffect(() => {
-    materials.forEach((m, i) => (m.opacity = light ? Math.max(restOpacity.current[i], 0.88) : restOpacity.current[i]));
-  }, [light, materials]);
+  const fade = useFade(materials, group, getPresence, light ? 0.88 : 0);
 
   useFrame(() => {
+    fade();
     const load = kidneyLoad(getProgress());
     materials.forEach((m, i) => applyGlow(m, rest.current[i], GLOW.current, 0.1 * load, 0.9 + 1.2 * load));
   });
@@ -62,12 +68,28 @@ export function Kidney({ getProgress, label }: Pick<ProgressProps, 'getProgress'
   return (
     <>
       {/* Tilted ~15° as the brief asks; the file is upright with the hilum on +X. */}
-      <group position={KIDNEY_POS} rotation={[0, 0, -0.26]} scale={1.15}>
+      <group ref={group} position={KIDNEY_POS} rotation={[0, 0, -0.26]} scale={1.15}>
         <primitive object={root} />
       </group>
-      <ScenePointLabel position={[KIDNEY_POS[0] + 2.4, KIDNEY_POS[1] + 0.4, 0]} text={label} color="var(--text-secondary)" />
+      <ScenePointLabel position={[KIDNEY_POS[0] + 2.4, KIDNEY_POS[1] + 0.4, 0]} text={label} color="var(--text-secondary)" getOpacity={getPresence} />
     </>
   );
+}
+
+/**
+ * Fades a prop in with the scenery: hides the group at zero and scales the materials' opacity otherwise. Returns a
+ * function to call every frame. `minOpacity` raises the resting opacity (the kidney on the pale canvas).
+ */
+function useFade(materials: MeshStandardMaterial[], group: RefObject<Group | null>, getPresence: () => number, minOpacity = 0) {
+  const rest = useMemo(() => materials.map((m) => Math.max(m.opacity, minOpacity)), [materials, minOpacity]);
+  return () => {
+    const presence = getPresence();
+    if (group.current) group.current.visible = presence > 0.01;
+    materials.forEach((m, i) => {
+      m.transparent = true;
+      m.opacity = rest[i] * presence;
+    });
+  };
 }
 
 export type { Vec3 };

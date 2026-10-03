@@ -62,7 +62,7 @@ function Marker({
         text={waypoint.label}
         color={enzyme ? 'var(--monitor-trace)' : moleculeColor}
         subtle={enzyme}
-        opacity={label.current}
+        getOpacity={() => label.current}
       />
     </>
   );

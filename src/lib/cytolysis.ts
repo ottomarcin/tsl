@@ -128,6 +128,32 @@ export function particleBrightness(life: number): number {
  * Fills `positions` and `colors` (rgb, pre-multiplied by brightness for additive blending) for every particle at
  * `progress`. Particles that are not born or already dead sit at their cell with zero brightness.
  */
+/**
+ * Where Scene 1's burst particles end up: a subset of them gather into Scene 2's source cloud while the rest fade.
+ * `targets` holds an xyz per particle (see `buildCloudTargets`), `keepEvery` picks the survivors (every Nth particle),
+ * `amount` is 0 (still in the burst) → 1 (gathered).
+ */
+export interface CloudHandOver {
+  targets: Float32Array;
+  keepEvery: number;
+  amount: number;
+}
+
+/** Brightness a surviving particle settles at in the gathered cloud. */
+export const CLOUD_BRIGHTNESS = 0.85;
+
+/** Gaussian-ish blob around the origin (the cascade's source), one target per particle. */
+export function buildCloudTargets(count: number, seed: number): Float32Array {
+  const rand = seededRandom(seed);
+  const out = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    out[i * 3] = (rand() + rand() + rand() - 1.5) * 1.1;
+    out[i * 3 + 1] = (rand() + rand() + rand() - 1.5) * 0.7;
+    out[i * 3 + 2] = (rand() + rand() + rand() - 1.5) * 0.5;
+  }
+  return out;
+}
+
 export function fillParticleBuffers(
   positions: Float32Array,
   colors: Float32Array,
@@ -139,6 +165,7 @@ export function fillParticleBuffers(
   progress: number,
   /** 3: rgb pre-multiplied by brightness (additive blending). 4: full rgb + brightness as alpha (normal blending). */
   colorStride: 3 | 4 = 3,
+  cloud?: CloudHandOver,
 ): void {
   const per = PARTICLES.perCellPerSystem;
   const dragK = PARTICLES.drag;
@@ -150,27 +177,41 @@ export function fillParticleBuffers(
     const travel = (1 - Math.exp(-dragK * t)) / dragK;
     const fall = 0.5 * PARTICLES.gravity * t * t;
     for (let k = 0; k < per; k++) {
-      const i = (c * per + k) * 3;
-      positions[i] = ox + velocities[i] * travel;
-      positions[i + 1] = oy + velocities[i + 1] * travel - fall;
-      positions[i + 2] = oz + velocities[i + 2] * travel;
+      const n = c * per + k;
+      const i = n * 3;
+      let x = ox + velocities[i] * travel;
+      let y = oy + velocities[i + 1] * travel - fall;
+      let z = oz + velocities[i + 2] * travel;
+      let bright = b;
+      if (cloud && cloud.amount > 0) {
+        const a = cloud.amount;
+        const e = a * a * (3 - 2 * a);
+        x += (cloud.targets[i] - x) * e;
+        y += (cloud.targets[i + 1] - y) * e;
+        z += (cloud.targets[i + 2] - z) * e;
+        // Survivors settle at a steady brightness whatever their burst lifetime was; the rest fade as they gather.
+        bright = n % cloud.keepEvery === 0 ? b + (CLOUD_BRIGHTNESS - b) * e : b * (1 - e) * (1 - e);
+      }
+      positions[i] = x;
+      positions[i + 1] = y;
+      positions[i + 2] = z;
       if (colorStride === 4) {
-        const j = (c * per + k) * 4;
+        const j = n * 4;
         colors[j] = rgb[0];
         colors[j + 1] = rgb[1];
         colors[j + 2] = rgb[2];
-        colors[j + 3] = b;
+        colors[j + 3] = bright;
       } else {
-        colors[i] = rgb[0] * b;
-        colors[i + 1] = rgb[1] * b;
-        colors[i + 2] = rgb[2] * b;
+        colors[i] = rgb[0] * bright;
+        colors[i + 1] = rgb[1] * bright;
+        colors[i + 2] = rgb[2] * bright;
       }
     }
   }
 }
 
 /** Equivalent progress used under reduced motion: each step shows a still snapshot of the event. */
-export const REDUCED_MOTION_PROGRESS = [0.3, 0.78, 1] as const;
+export const REDUCED_MOTION_PROGRESS = [0.3, 0.78, 0.84] as const;
 
 /** Camera keyframes (asset spec `s1_camera_path`): hold through the wave, then pull back to roughly double distance. */
 export const CYTOLYSIS_CAMERA_PATH = [

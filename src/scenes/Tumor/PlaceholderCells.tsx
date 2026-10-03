@@ -4,22 +4,22 @@ import { Color, InstancedMesh, Object3D } from 'three';
 import type { MassInstance } from '../../lib/massLayout';
 import { cellState } from '../../lib/cytolysis';
 
-export interface RupturingMassProps {
+export interface PlaceholderCellsProps {
   instances: MassInstance[];
   /** Each cell's `waveCoordinate`. */
   waveCoords: ArrayLike<number>;
-  getProgress: () => number;
+  /** Progress through the cytolysis scene (0 = intact), read every frame. */
+  getLocal: () => number;
 }
 
 const _obj = new Object3D();
 const _color = new Color();
 
 /**
- * The tumor mass during cytolysis. Placeholder for s1_cell_rupture.glb's shape keys: a cell stretches while the wave
- * passes (deform), swells as the membrane gives way (rupture), then shrinks out of existence (fade). Cells brighten as
- * they destabilise. Fully derived from progress, so it replays in reverse.
+ * Stand-in for the cell model while it loads (and if it fails to): stretching, swelling icosahedra with the same
+ * timing as the real thing, so the scene is never empty and never plays differently.
  */
-export function RupturingMass({ instances, waveCoords, getProgress }: RupturingMassProps) {
+export function PlaceholderCells({ instances, waveCoords, getLocal }: PlaceholderCellsProps) {
   const mesh = useRef<InstancedMesh>(null);
   const last = useRef(NaN);
 
@@ -45,13 +45,13 @@ export function RupturingMass({ instances, waveCoords, getProgress }: RupturingM
 
   useLayoutEffect(() => {
     last.current = NaN;
-    apply(getProgress());
-    last.current = getProgress();
+    apply(getLocal());
+    last.current = getLocal();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instances]);
 
   useFrame(() => {
-    const p = getProgress();
+    const p = getLocal();
     if (p === last.current) return;
     last.current = p;
     apply(p);
