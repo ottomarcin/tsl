@@ -6,6 +6,9 @@ import { ScrollCanvas } from './engine/ScrollCanvas';
 import { tlsContent } from './content/tls';
 import { LandingScreen } from './components/LandingScreen/LandingScreen';
 import { ThemeToggle } from './components/ThemeToggle/ThemeToggle';
+import { QualityToggle } from './components/QualityToggle/QualityToggle';
+import { AssetLoadingBar } from './components/AssetLoadingBar/AssetLoadingBar';
+import { useProgress } from '@react-three/drei';
 import { LabStrip } from './components/LabStrip/LabStrip';
 import { SideNav } from './components/SideNav/SideNav';
 import { ColorLegend } from './components/ColorLegend/ColorLegend';
@@ -54,6 +57,9 @@ export function App() {
   const route = useAppStore((s) => s.route);
   const theme = useAppStore((s) => s.theme);
   const toggleTheme = useAppStore((s) => s.toggleTheme);
+  const modelQuality = useAppStore((s) => s.modelQuality);
+  const toggleModelQuality = useAppStore((s) => s.toggleModelQuality);
+  const { active: assetsLoading, progress: assetProgress } = useProgress();
   const sideNavExpanded = useAppStore((s) => s.sideNavExpanded);
   const toggleSideNav = useAppStore((s) => s.toggleSideNav);
   const labValues = useAppStore((s) => s.labValues);
@@ -132,6 +138,7 @@ export function App() {
         />
         <div className={styles.mainArea}>
           <div className={styles.themeToggleFloating}>
+            <QualityToggle quality={modelQuality} onToggle={toggleModelQuality} />
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
           </div>
           <div className={styles.endPlaceholder}>End card — Epic 9</div>
@@ -155,6 +162,7 @@ export function App() {
 
   return (
     <div className={styles.sceneLayout} data-testid="app-shell">
+      <AssetLoadingBar active={assetsLoading} progress={assetProgress} />
       <SideNav
         scenes={SIDE_NAV_SCENES}
         currentSceneIndex={sceneIndex}
@@ -183,6 +191,7 @@ export function App() {
           </button>
         )}
         <div className={styles.themeToggleFloating}>
+          <QualityToggle quality={modelQuality} onToggle={toggleModelQuality} />
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
         </div>
         {minimapHighlight && (

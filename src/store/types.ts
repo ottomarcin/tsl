@@ -1,3 +1,5 @@
+import type { ModelQuality } from '../content/schema';
+
 export type AppRoute = { kind: 'landing' } | { kind: 'scene'; index: number } | { kind: 'end' };
 
 export type Theme = 'dark' | 'light';
@@ -16,6 +18,8 @@ export interface AppState {
   labValues: Record<string, number>;
   sideNavExpanded: boolean;
   interventionState: Record<string, number | boolean>;
+  /** Which model tier to load: 'high' (default) or 'standard' (lighter files). */
+  modelQuality: ModelQuality;
   reducedMotion: boolean;
   accessibilityMode: boolean;
   /** Imperative plumbing to the scroll engine — not app state, never persisted. */
@@ -35,6 +39,8 @@ export interface AppActions {
   setLabValues: (values: Record<string, number>) => void;
   setInterventionState: (id: string, value: number | boolean) => void;
   resetInterventions: () => void;
+  setModelQuality: (quality: ModelQuality) => void;
+  toggleModelQuality: () => void;
   setReducedMotion: (reduced: boolean) => void;
   setAccessibilityMode: (enabled: boolean) => void;
   toggleAccessibilityMode: () => void;

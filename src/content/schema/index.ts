@@ -5,3 +5,4 @@ export type { CascadeWaypoint, CascadeBranch, CascadeTopology } from './cascade'
 export type { MetricValueMap, InterventionStateMap, InterventionDefinition } from './intervention';
 export type { LandingContent } from './landing';
 export type { DiseaseContent } from './content';
+export type { ModelQuality, ModelUsage, ModelEntry, ModelManifest } from './models';

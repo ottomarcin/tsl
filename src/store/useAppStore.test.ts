@@ -145,4 +145,22 @@ describe('useAppStore', () => {
     useAppStore.getState().setAccessibilityMode(false);
     expect(useAppStore.getState().accessibilityMode).toBe(false);
   });
+
+  describe('model quality', () => {
+    it('defaults to high', () => {
+      expect(useAppStore.getState().modelQuality).toBe('high');
+    });
+    it('toggles between high and standard and persists the choice', () => {
+      useAppStore.getState().toggleModelQuality();
+      expect(useAppStore.getState().modelQuality).toBe('standard');
+      expect(window.localStorage.getItem('modelQuality')).toBe('standard');
+      useAppStore.getState().toggleModelQuality();
+      expect(useAppStore.getState().modelQuality).toBe('high');
+      expect(window.localStorage.getItem('modelQuality')).toBe('high');
+    });
+    it('sets an explicit tier', () => {
+      useAppStore.getState().setModelQuality('standard');
+      expect(useAppStore.getState().modelQuality).toBe('standard');
+    });
+  });
 });

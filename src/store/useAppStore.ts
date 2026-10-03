@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { AppStore, JumpSource } from './types';
 import { SCENE_COUNT } from './types';
 import { persistTheme, readDomTheme } from '../lib/theme';
+import { persistQuality, resolveInitialQuality } from '../lib/quality';
 
 export const useAppStore = create<AppStore>((set, get) => ({
   route: { kind: 'landing' },
@@ -10,6 +11,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   labValues: {},
   sideNavExpanded: true,
   interventionState: {},
+  modelQuality: resolveInitialQuality(window.location.search),
   reducedMotion: false,
   accessibilityMode: false,
   scrollApi: null,
@@ -66,6 +68,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   resetInterventions() {
     set({ interventionState: {} });
+  },
+
+  setModelQuality(quality) {
+    persistQuality(quality);
+    set({ modelQuality: quality });
+  },
+
+  toggleModelQuality() {
+    get().setModelQuality(get().modelQuality === 'high' ? 'standard' : 'high');
   },
 
   setReducedMotion(reduced: boolean) {

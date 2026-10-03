@@ -112,6 +112,25 @@ describe('App', () => {
     expect(screen.queryByTestId('mock-scroll-canvas')).not.toBeInTheDocument();
   });
 
+  describe('model quality toggle', () => {
+    it('switches the store between high and standard quality from the scene chrome', async () => {
+      window.history.replaceState(null, '', '/scene/0');
+      const { App, useAppStore } = await setUpApp(true);
+      render(<App />);
+      expect(useAppStore.getState().modelQuality).toBe('high');
+      await userEvent.click(screen.getByRole('button', { name: /switch to standard quality/i }));
+      expect(useAppStore.getState().modelQuality).toBe('standard');
+      expect(screen.getByRole('button', { name: /switch to high quality/i })).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('shows the loading bar only while assets are loading', async () => {
+      window.history.replaceState(null, '', '/scene/0');
+      const { App } = await setUpApp(true);
+      render(<App />);
+      expect(screen.queryByRole('progressbar', { name: 'Loading 3D models' })).not.toBeInTheDocument();
+    });
+  });
+
   describe('responsive chrome', () => {
     it('shows the icon rail (collapsed) on tablet widths', async () => {
       window.innerWidth = 900;

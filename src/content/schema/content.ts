@@ -3,6 +3,7 @@ import type { SceneDefinition } from './scene';
 import type { CascadeTopology } from './cascade';
 import type { InterventionDefinition } from './intervention';
 import type { LandingContent } from './landing';
+import type { ModelManifest } from './models';
 
 /**
  * The top-level, disease-agnostic content contract. TLS is one instance of
@@ -15,4 +16,5 @@ export interface DiseaseContent {
   scenes: SceneDefinition[];
   cascade: CascadeTopology;
   interventions: InterventionDefinition[];
+  models: ModelManifest;
 }
