@@ -264,9 +264,9 @@ describe('App', () => {
       expect(screen.getByText(steps[3].learnMore!.heading)).toBeVisible();
     });
 
-    it('keeps the minimap with the potassium and calcium paths lit and says where we are', async () => {
+    it('keeps the minimap with the potassium and calcium paths lit', async () => {
       await openScene4AtProgress(0.1);
-      expect(screen.getByRole('img', { name: /Cascade progress minimap\. You are here: K⁺ and Ca²⁺ effects/ })).toBeInTheDocument();
+      expect(screen.getByRole('img', { name: /Cascade progress minimap/ })).toBeInTheDocument();
     });
 
     it('has the four steps in the side menu and no mechanism toggle', async () => {

@@ -235,15 +235,6 @@ export function App() {
               branches={tlsContent.cascade.branches}
               highlightedId={minimapHighlight}
               title="The cascade"
-              locationLabel={
-                minimapHighlight === 'kidney'
-                  ? 'You are here: kidney'
-                  : Array.isArray(minimapHighlight)
-                    ? 'You are here: K⁺ and Ca²⁺ effects'
-                    : minimapHighlight === 'full'
-                      ? 'The whole cascade'
-                      : undefined
-              }
             />
           </div>
         )}

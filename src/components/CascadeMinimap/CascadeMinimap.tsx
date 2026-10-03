@@ -10,8 +10,6 @@ export interface CascadeMinimapProps {
   highlightedId: string | string[] | 'kidney' | 'full' | null;
   /** Heading shown above the map, saying what it is. */
   title?: string;
-  /** "You are here" line under the map, saying where the current scene sits on it. */
-  locationLabel?: string;
   /** Text for the kidney's label on the map. */
   kidneyLabel?: string;
 }
@@ -41,13 +39,13 @@ function laneGeometry(branch: CascadeBranch, i: number, count: number) {
  * `shared_cascade_minimap.svg` asset (asset spec §8) hasn't been produced yet; this stands in for it. The drifting
  * particles are hidden under reduced motion.
  */
-export function CascadeMinimap({ branches, highlightedId, title = 'The cascade', locationLabel, kidneyLabel = 'Kidney' }: CascadeMinimapProps) {
+export function CascadeMinimap({ branches, highlightedId, title = 'The cascade', kidneyLabel = 'Kidney' }: CascadeMinimapProps) {
   if (highlightedId === null) return null;
   const ids = Array.isArray(highlightedId) ? highlightedId : [highlightedId];
   const kidneyLit = highlightedId === 'kidney' || highlightedId === 'full';
 
   return (
-    <div className={styles.panel} role="img" aria-label={locationLabel ? `Cascade progress minimap. ${locationLabel}` : 'Cascade progress minimap'}>
+    <div className={styles.panel} role="img" aria-label="Cascade progress minimap">
       <p className={styles.title}>{title}</p>
       <svg width={WIDTH} height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} aria-hidden="true">
         {branches.map((branch, i) => {
@@ -83,8 +81,9 @@ export function CascadeMinimap({ branches, highlightedId, title = 'The cascade',
 
         {/* The kidney, where the streams converge. */}
         <g data-testid="minimap-kidney" data-lit={kidneyLit} opacity={kidneyLit ? 1 : 0.45}>
-          {kidneyLit && <ellipse className={styles.pulse} cx={MEET.x} cy={176} rx={36} ry={19} fill="none" stroke="var(--crystal)" strokeWidth={1.5} />}
           <path
+            className={highlightedId === 'kidney' ? styles.pulse : undefined}
+            data-pulsing={highlightedId === 'kidney'}
             d="M 64 174 C 62 162, 96 158, 112 165 C 122 170, 120 179, 110 180 C 102 181, 100 187, 106 191 C 96 196, 66 192, 64 174 Z"
             fill={kidneyLit ? 'var(--crystal)' : 'none'}
             fillOpacity={kidneyLit ? 0.55 : 0}
@@ -96,12 +95,6 @@ export function CascadeMinimap({ branches, highlightedId, title = 'The cascade',
           </text>
         </g>
       </svg>
-      {locationLabel && (
-        <p className={styles.here}>
-          <span className={styles.hereDot} aria-hidden="true" />
-          {locationLabel}
-        </p>
-      )}
     </div>
   );
 }

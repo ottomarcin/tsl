@@ -45,14 +45,24 @@ describe('CascadeMinimap', () => {
   it('with "kidney" lights the kidney, pulses it, and softly dims all lanes', () => {
     const { container, getByTestId } = render(<CascadeMinimap branches={tlsCascade.branches} highlightedId="kidney" />);
     expect(getByTestId('minimap-kidney')).toHaveAttribute('data-lit', 'true');
-    expect(getByTestId('minimap-kidney').querySelector('ellipse')).not.toBeNull();
+    expect(getByTestId('minimap-kidney').querySelector('path[data-pulsing="true"]')).not.toBeNull();
     container.querySelectorAll('g[data-branch]').forEach((g) => expect(g.getAttribute('opacity')).toBe('0.55'));
+  });
+
+  it('pulses the kidney only when it is where we are, not when the whole cascade is lit', () => {
+    const { getByTestId, rerender } = render(<CascadeMinimap branches={tlsCascade.branches} highlightedId="kidney" />);
+    expect(getByTestId('minimap-kidney').querySelector('path[data-pulsing="true"]')).not.toBeNull();
+    rerender(<CascadeMinimap branches={tlsCascade.branches} highlightedId="full" />);
+    expect(getByTestId('minimap-kidney')).toHaveAttribute('data-lit', 'true'); // lit, because everything is
+    expect(getByTestId('minimap-kidney').querySelector('path[data-pulsing="true"]')).toBeNull(); // but not pulsing: no single place to point at
+    rerender(<CascadeMinimap branches={tlsCascade.branches} highlightedId={['K', 'PO4']} />);
+    expect(getByTestId('minimap-kidney').querySelector('path[data-pulsing="true"]')).toBeNull();
   });
 
   it('leaves the kidney unlit, and not pulsing, when a branch is in focus', () => {
     const { getByTestId } = render(<CascadeMinimap branches={tlsCascade.branches} highlightedId="PO4" />);
     expect(getByTestId('minimap-kidney')).toHaveAttribute('data-lit', 'false');
-    expect(getByTestId('minimap-kidney').querySelector('ellipse')).toBeNull();
+    expect(getByTestId('minimap-kidney').querySelector('path[data-pulsing="true"]')).toBeNull();
   });
 
   it('animates particles along every lane', () => {
@@ -72,13 +82,7 @@ describe('CascadeMinimap', () => {
     expect(getByText('Kidney')).toBeInTheDocument();
   });
 
-  it('shows a "you are here" line and includes it in the accessible name', () => {
-    const { getByText, getByRole } = render(<CascadeMinimap branches={tlsCascade.branches} highlightedId="kidney" locationLabel="You are here: kidney" />);
-    expect(getByText('You are here: kidney')).toBeInTheDocument();
-    expect(getByRole('img').getAttribute('aria-label')).toContain('You are here: kidney');
-  });
-
-  it('shows no location line when none is given', () => {
+  it('prints only the title under the map', () => {
     const { container } = render(<CascadeMinimap branches={tlsCascade.branches} highlightedId="full" />);
     expect(container.querySelectorAll('p')).toHaveLength(1); // only the title
   });
