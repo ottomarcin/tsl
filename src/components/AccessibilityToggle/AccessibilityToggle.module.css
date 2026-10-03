@@ -34,3 +34,11 @@
   background: var(--bg-elevated);
   color: var(--monitor-trace);
 }
+
+/* Touch: 44px targets (design spec §9). */
+@media (max-width: 767px), (pointer: coarse) {
+  .toggle {
+    width: 44px;
+    height: 44px;
+  }
+}

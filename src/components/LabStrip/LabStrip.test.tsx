@@ -118,4 +118,14 @@ describe('LabStrip', () => {
     );
     expect(await axe(container)).toHaveNoViolations();
   });
+
+  it('shows a legend button only when it is given something to open', async () => {
+    const props = { metrics: tlsMetrics, values, currentStage: 0, totalStages: 6, onJumpToStage: vi.fn() };
+    const { rerender } = render(<LabStrip {...props} />);
+    expect(screen.queryByRole('button', { name: 'Colour legend' })).not.toBeInTheDocument();
+    const onShowLegend = vi.fn();
+    rerender(<LabStrip {...props} onShowLegend={onShowLegend} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Colour legend' }));
+    expect(onShowLegend).toHaveBeenCalledTimes(1);
+  });
 });

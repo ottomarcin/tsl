@@ -134,3 +134,23 @@
     padding-left: 0;
   }
 }
+
+.legendButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 44px;
+  height: 44px;
+  margin: -8px 0;
+  border: none;
+  border-radius: var(--radius-input);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.legendButton:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}

@@ -130,3 +130,9 @@
 .link:focus-visible {
   text-decoration: underline;
 }
+
+@media (max-width: 767px), (pointer: coarse) {
+  .trigger {
+    min-height: 44px;
+  }
+}

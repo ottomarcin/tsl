@@ -24,7 +24,7 @@ describe('chipColumnAnchor', () => {
     const pts = chips.map((_, i) => chipColumnAnchor(i, chips.length));
     expect(new Set(pts.map((p) => p.x))).toEqual(new Set([50]));
     for (let i = 1; i < pts.length; i++) expect(pts[i].y).toBeGreaterThan(pts[i - 1].y);
-    expect(chipColumnAnchor(0, 1).y).toBe(6);
+    expect(chipColumnAnchor(0, 1).y).toBe(13);
   });
 });
 

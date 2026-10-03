@@ -52,3 +52,51 @@
   color: var(--text-primary);
   max-width: 240px;
 }
+
+/* Touch: each dot is a 44px-wide target with the dot drawn inside it. Six of them fit the strip's width. */
+@media (max-width: 767px), (pointer: coarse) {
+  .track {
+    gap: 0;
+  }
+
+  .dot.completed,
+  .dot.current,
+  .dot.future {
+    position: relative;
+    /* 44px where the strip has room; on a 320px phone, what is left after the info button and the time. */
+    width: clamp(28px, calc((100vw - 140px) / 6), 44px);
+    height: 44px;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    opacity: 1;
+  }
+
+  .dot::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-radius: var(--radius-pill);
+    transform: translate(-50%, -50%);
+  }
+
+  .completed::before {
+    width: 6px;
+    height: 6px;
+    background: var(--text-muted);
+  }
+
+  .current::before {
+    width: 8px;
+    height: 8px;
+    background: var(--monitor-trace);
+  }
+
+  .future::before {
+    width: 6px;
+    height: 6px;
+    border: 1.5px solid var(--text-muted);
+    opacity: 0.5;
+  }
+}

@@ -91,4 +91,18 @@ describe('CascadeMinimap', () => {
     const { container } = render(<CascadeMinimap branches={tlsCascade.branches} highlightedId="purines" />);
     expect(await axe(container)).toHaveNoViolations();
   });
+
+  it('is hidden from assistive technology beside the story, and is an image with a description when it is the content', () => {
+    const { rerender, getByTestId, queryByRole } = render(<CascadeMinimap branches={tlsCascade.branches} highlightedId="full" />);
+    expect(getByTestId('cascade-minimap')).toHaveAttribute('aria-hidden', 'true');
+    expect(queryByRole('img')).toBeNull();
+    rerender(<CascadeMinimap branches={tlsCascade.branches} highlightedId="full" decorative={false} />);
+    expect(getByTestId('cascade-minimap')).not.toHaveAttribute('aria-hidden');
+    expect(queryByRole('img', { name: /Cascade map/ })).not.toBeNull();
+  });
+
+  it('leaves out an empty title', () => {
+    const { container } = render(<CascadeMinimap branches={tlsCascade.branches} highlightedId="full" title="" />);
+    expect(container.querySelectorAll('p')).toHaveLength(0);
+  });
 });

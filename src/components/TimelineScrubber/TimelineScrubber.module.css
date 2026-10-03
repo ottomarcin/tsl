@@ -66,3 +66,11 @@
 .end {
   flex-shrink: 0;
 }
+
+@media (max-width: 767px), (pointer: coarse) {
+  .thumb::after {
+    content: '';
+    position: absolute;
+    inset: -15px;
+  }
+}

@@ -218,3 +218,27 @@
 .reset:hover {
   background: var(--bg-elevated);
 }
+
+/* Touch: switch and slider thumb keep their look and reach 44px by extending their hit area. */
+@media (max-width: 767px), (pointer: coarse) {
+  .switch,
+  .thumb {
+    position: relative;
+  }
+
+  .switch::after {
+    content: '';
+    position: absolute;
+    inset: -11px -3px;
+  }
+
+  .thumb::after {
+    content: '';
+    position: absolute;
+    inset: -13px;
+  }
+
+  .reset {
+    height: 44px;
+  }
+}

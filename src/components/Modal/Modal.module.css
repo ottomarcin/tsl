@@ -107,3 +107,10 @@
     animation-duration: 0ms;
   }
 }
+
+@media (max-width: 767px), (pointer: coarse) {
+  .closeButton {
+    width: 44px;
+    height: 44px;
+  }
+}

@@ -81,3 +81,9 @@
   color: var(--text-secondary);
   text-align: center;
 }
+
+@media (max-width: 767px), (pointer: coarse) {
+  .tab {
+    height: 44px;
+  }
+}

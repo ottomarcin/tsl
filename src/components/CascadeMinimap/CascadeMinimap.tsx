@@ -12,6 +12,8 @@ export interface CascadeMinimapProps {
   title?: string;
   /** Text for the kidney's label on the map. */
   kidneyLabel?: string;
+  /** On screen as a map beside the story it is decoration (hidden from assistive technology); on its own, in a dialog, it is the content. */
+  decorative?: boolean;
 }
 
 const WIDTH = 180;
@@ -39,14 +41,18 @@ function laneGeometry(branch: CascadeBranch, i: number, count: number) {
  * `shared_cascade_minimap.svg` asset (asset spec §8) hasn't been produced yet; this stands in for it. The drifting
  * particles are hidden under reduced motion.
  */
-export function CascadeMinimap({ branches, highlightedId, title = 'The cascade', kidneyLabel = 'Kidney' }: CascadeMinimapProps) {
+export function CascadeMinimap({ branches, highlightedId, title = 'The cascade', kidneyLabel = 'Kidney', decorative = true }: CascadeMinimapProps) {
   if (highlightedId === null) return null;
   const ids = Array.isArray(highlightedId) ? highlightedId : [highlightedId];
   const kidneyLit = highlightedId === 'kidney' || highlightedId === 'full';
 
   return (
-    <div className={styles.panel} aria-hidden="true" data-testid="cascade-minimap">
-      <p className={styles.title}>{title}</p>
+    <div
+      className={styles.panel}
+      data-testid="cascade-minimap"
+      {...(decorative ? { 'aria-hidden': true } : { role: 'img', 'aria-label': 'Cascade map: potassium, phosphate and purine paths from the lysis event, with the phosphate and purine crystals converging on the kidney' })}
+    >
+      {title && <p className={styles.title}>{title}</p>}
       <svg width={WIDTH} height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} aria-hidden="true">
         {branches.map((branch, i) => {
           const isHighlighted = highlightedId === 'full' || ids.includes(branch.id);

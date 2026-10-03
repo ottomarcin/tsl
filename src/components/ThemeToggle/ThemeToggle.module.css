@@ -29,3 +29,11 @@
   transform: scale(0.95);
   background: var(--bg-elevated);
 }
+
+/* Touch: 44px targets (design spec §9). */
+@media (max-width: 767px), (pointer: coarse) {
+  .toggle {
+    width: 44px;
+    height: 44px;
+  }
+}

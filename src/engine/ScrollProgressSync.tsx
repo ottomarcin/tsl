@@ -74,9 +74,33 @@ export function ScrollProgressSync() {
         }
       },
     });
+    // Rotating the phone (or resizing the window) changes the proxy's height, and the browser keeps the scroll in pixels:
+    // the story would jump. Remember where in the story the viewer is, and put the scroll back there after a resize.
+    const el = scroll.el;
+    let fraction = 0;
+    let height = el.clientHeight;
+    const maxScroll = () => el.scrollHeight - el.clientHeight;
+    const onScroll = () => {
+      // Scrolls caused by the resize itself (clamping to the new height) come before the observer fires: ignore them.
+      if (el.clientHeight !== height) return;
+      const max = maxScroll();
+      if (max > 0) fraction = el.scrollTop / max;
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => {
+      if (el.clientHeight === height) return;
+      height = el.clientHeight;
+      const max = maxScroll();
+      if (max <= 0) return;
+      el.scrollTop = fraction * max;
+      cutTo(fraction);
+    });
+    observer?.observe(el);
     ready.current = true;
     return () => {
       ready.current = false;
+      el.removeEventListener('scroll', onScroll);
+      observer?.disconnect();
       registerScrollApi(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

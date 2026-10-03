@@ -436,6 +436,18 @@ describe('App', () => {
       expect(await screen.findByRole('region', { name: 'Try interventions' })).toBeInTheDocument();
     });
 
+    it('on a phone the time scrubber stays on the page until the last step, then goes into the sheet with the panel', async () => {
+      window.innerWidth = 390;
+      const { useAppStore } = await openScene5AtProgress(at(1));
+      expect(screen.getByRole('slider', { name: 'Time since lysis began' })).toBeInTheDocument();
+      await act(async () => useAppStore.getState().setSceneProgress(at(5)));
+      expect(screen.queryByRole('slider', { name: 'Time since lysis began' })).not.toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Try interventions' }));
+      const sheet = await screen.findByRole('dialog', { name: 'Try interventions' });
+      expect(within(sheet).getByRole('slider', { name: 'Time since lysis began' })).toBeInTheDocument();
+      expect(within(sheet).getByRole('region', { name: 'Try interventions' })).toBeInTheDocument();
+    });
+
     it('shows no cascade minimap (the cascade itself is on screen)', async () => {
       await openScene5AtProgress(at(1));
       expect(screen.queryByTestId('cascade-minimap')).not.toBeInTheDocument();
@@ -454,6 +466,51 @@ describe('App', () => {
         unmount();
         vi.resetModules();
       }
+    });
+  });
+
+  describe('layout below the desktop width', () => {
+    async function openAt(width: number, path: string, progress = 0.05) {
+      window.innerWidth = width;
+      window.history.replaceState(null, '', path);
+      const { App, useAppStore } = await setUpApp(true);
+      const utils = render(<App />);
+      await act(async () => {
+        useAppStore.getState().setSceneProgress(progress);
+      });
+      return { ...utils, useAppStore };
+    }
+
+    it('on a phone the legend is behind an info button in the lab strip, and opens as a bottom sheet', async () => {
+      await openAt(390, '/scene/2');
+      expect(screen.queryByRole('button', { name: /^Legend$/ })).not.toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Colour legend' }));
+      const sheet = await screen.findByRole('dialog', { name: 'Legend' });
+      expect(within(sheet).getByText('Crystals')).toBeInTheDocument();
+      expect(within(sheet).getByText('Flagged')).toBeInTheDocument();
+    });
+
+    it('on a desktop the legend stays a panel and the strip has no info button', async () => {
+      await openAt(1440, '/scene/2');
+      expect(screen.getByRole('button', { name: /Legend/ })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Colour legend' })).not.toBeInTheDocument();
+    });
+
+    it.each([390, 1000])('at %ipx the cascade map is a button that opens it on its own', async (width) => {
+      await openAt(width, '/scene/3');
+      await userEvent.click(screen.getByRole('button', { name: 'Show cascade map' }));
+      const dialog = await screen.findByRole('dialog', { name: 'The cascade' });
+      expect(within(dialog).getByRole('img', { name: /Cascade map/ })).toBeInTheDocument();
+    });
+
+    it('at desktop width there is no map button (the map is on screen), and none before Scene 3', async () => {
+      await openAt(1440, '/scene/3');
+      expect(screen.queryByRole('button', { name: 'Show cascade map' })).not.toBeInTheDocument();
+    });
+
+    it('has no map button where there is no map (before Scene 3, and Scene 5)', async () => {
+      await openAt(390, '/scene/1');
+      expect(screen.queryByRole('button', { name: 'Show cascade map' })).not.toBeInTheDocument();
     });
   });
 

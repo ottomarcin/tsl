@@ -1,4 +1,5 @@
 import styles from './ColorLegend.module.css';
+import { LegendRows } from './LegendRows';
 
 export interface ColorLegendItem {
   colorToken: string;
@@ -20,16 +21,7 @@ export function ColorLegend({ items, expanded, onToggleExpanded }: ColorLegendPr
       {expanded ? (
         <div className={styles.expanded}>
           <span className={styles.header}>Legend</span>
-          {items.map((item) => (
-            <div key={item.label} className={styles.row}>
-              {(item.indicator ?? 'swatch') === 'swatch' ? (
-                <span className={styles.swatch} style={{ background: `var(${item.colorToken})` }} />
-              ) : (
-                <span className={styles.line} style={{ background: `var(${item.colorToken})` }} />
-              )}
-              <span className={styles.label}>{item.label}</span>
-            </div>
-          ))}
+          <LegendRows items={items} />
         </div>
       ) : (
         <div className={styles.collapsed}>

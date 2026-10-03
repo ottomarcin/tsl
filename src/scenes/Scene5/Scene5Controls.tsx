@@ -38,31 +38,32 @@ export function FreePlayPanel() {
   );
 }
 
-/** The time scrubber (from the first intervention on) and the free-play panel (step 5.6); on phones the panel is a bottom sheet. */
-export function Scene5Controls({ stepIndex, isMobile }: { stepIndex: number; isMobile: boolean }) {
+/** The time scrubber (from the first intervention on) and the free-play panel (step 5.6); on phones and short landscape screens the panel is a bottom sheet. */
+export function Scene5Controls({ stepIndex, asSheet }: { stepIndex: number; asSheet: boolean }) {
   const scrub = useAppStore((s) => s.scrub);
   const setScrub = useAppStore((s) => s.setScrub);
   const [sheetOpen, setSheetOpen] = useState(false);
   const tau = displayedTime(useStoryTime(), scrub);
 
   const panel = <FreePlayPanel />;
+  const scrubber = (
+    <TimelineScrubber
+      value={tau}
+      onChange={setScrub}
+      startLabel={hoursLabel(0)}
+      endLabel={`T+${SCENE5_HOURS}h`}
+      currentLabel={hoursLabel(tau)}
+      ariaLabel="Time since lysis began"
+    />
+  );
+  // With the panel in a bottom sheet the scrubber goes in with it, which leaves the scene itself uncluttered.
+  const scrubberInSheet = asSheet && stepIndex === FREE_PLAY_STEP;
 
   return (
     <>
-      {stepIndex >= 1 && (
-        <div className={styles.scrubber}>
-          <TimelineScrubber
-            value={tau}
-            onChange={setScrub}
-            startLabel={hoursLabel(0)}
-            endLabel={`T+${SCENE5_HOURS}h`}
-            currentLabel={hoursLabel(tau)}
-            ariaLabel="Time since lysis began"
-          />
-        </div>
-      )}
+      {stepIndex >= 1 && !scrubberInSheet && <div className={styles.scrubber}>{scrubber}</div>}
       {stepIndex === FREE_PLAY_STEP &&
-        (isMobile ? (
+        (asSheet ? (
           <>
             <div className={styles.sheetButton}>
               <Button variant="secondary" size="md" iconLeading={<SlidersHorizontal size={16} aria-hidden="true" />} onClick={() => setSheetOpen(true)}>
@@ -70,6 +71,7 @@ export function Scene5Controls({ stepIndex, isMobile }: { stepIndex: number; isM
               </Button>
             </div>
             <Modal open={sheetOpen} onOpenChange={setSheetOpen} title={HEADING} variant="sheet">
+              <div className={styles.sheetScrubber}>{scrubber}</div>
               {panel}
             </Modal>
           </>

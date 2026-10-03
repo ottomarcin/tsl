@@ -24,6 +24,9 @@ import { useScene5Labs } from './scenes/Scene5/useScene5Labs';
 import { SCENE5_INDEX } from './lib/scene5';
 import { EndCard } from './components/EndCard/EndCard';
 import { LiveAnnouncer } from './components/LiveAnnouncer/LiveAnnouncer';
+import { MinimapToggle } from './components/MinimapToggle/MinimapToggle';
+import { LegendRows } from './components/ColorLegend/LegendRows';
+import { Modal } from './components/Modal/Modal';
 import { SkipLink } from './components/SkipLink/SkipLink';
 import { AccessibilityToggle } from './components/AccessibilityToggle/AccessibilityToggle';
 import { TextOnlyScene } from './scenes/TextOnly/TextOnlyScene';
@@ -103,6 +106,8 @@ export function App() {
   const [legendExpanded, setLegendExpanded] = useState(false);
   const [replayOpen, setReplayOpen] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [minimapOpen, setMinimapOpen] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
   const restart = useAppStore((s) => s.restart);
   const textOnly = useAppStore((s) => s.accessibilityMode);
   const toggleTextOnly = useAppStore((s) => s.toggleAccessibilityMode);
@@ -242,6 +247,7 @@ export function App() {
           </button>
         )}
         <div className={styles.themeToggleFloating}>
+          {minimapHighlight && !textOnly && breakpoint !== 'desktop' && <MinimapToggle onClick={() => setMinimapOpen(true)} />}
           <AccessibilityToggle textOnly={textOnly} onToggle={toggleTextOnly} />
           {!textOnly && <QualityToggle quality={modelQuality} onToggle={toggleModelQuality} />}
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
@@ -298,12 +304,12 @@ export function App() {
                 <ModeToggle toggle={toggle} value={modeSelection[scene.id] ?? toggle.defaultId} onChange={(id) => setMode(scene.id, id)} />
               </div>
             )}
-            {sceneIndex === SCENE5_INDEX && !isEnd && <Scene5Controls stepIndex={stepIndex} isMobile={isMobile} />}
+            {sceneIndex === SCENE5_INDEX && !isEnd && <Scene5Controls stepIndex={stepIndex} asSheet={isMobile || shortViewport} />}
             <div className={styles.bottomStack}>
               {scene && activeStep && (
                 <CaptionBlock key={activeStep.id} sceneTitle={scene.title} caption={activeStep.caption} learnMore={activeStep.learnMore} />
               )}
-              {!isEnd && <ColorLegend items={LEGEND_ITEMS} expanded={legendExpanded} onToggleExpanded={() => setLegendExpanded((e) => !e)} />}
+              {!isEnd && !isMobile && <ColorLegend items={LEGEND_ITEMS} expanded={legendExpanded} onToggleExpanded={() => setLegendExpanded((e) => !e)} />}
             </div>
           </div>
         )}
@@ -317,6 +323,7 @@ export function App() {
           stageLabels={STAGE_LABELS}
           onJumpToStage={jumpToScene}
           reducedMotion={reducedMotion}
+          onShowLegend={isMobile ? () => setLegendOpen(true) : undefined}
         />
         )}
         {isEnd && (
@@ -328,6 +335,16 @@ export function App() {
           />
         )}
       </main>
+      <Modal open={minimapOpen && !!minimapHighlight} onOpenChange={setMinimapOpen} title="The cascade" variant={isMobile ? 'sheet' : 'modal'}>
+        {minimapHighlight && (
+          <div style={{ display: 'flex', justifyContent: 'center', zoom: 1.5 }}>
+            <CascadeMinimap branches={tlsContent.cascade.branches} highlightedId={minimapHighlight} title="" decorative={false} />
+          </div>
+        )}
+      </Modal>
+      <Modal open={legendOpen} onOpenChange={setLegendOpen} title="Legend" variant="sheet">
+        <LegendRows items={LEGEND_ITEMS} />
+      </Modal>
       <ReplaySceneModal
         open={replayOpen}
         onOpenChange={setReplayOpen}

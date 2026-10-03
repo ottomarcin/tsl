@@ -27,8 +27,9 @@ export function chipAnchor(index: number, count: number): { x: number; y: number
 
 /** Single centred column in the upper part of the layer, clear of the caption block below. */
 export function chipColumnAnchor(index: number, count: number): { x: number; y: number } {
-  const top = 6;
-  const bottom = 56;
+  // Starts below the top-right toggles (44px) even on a 320px-wide phone.
+  const top = 13;
+  const bottom = 58;
   return { x: 50, y: count > 1 ? top + (index / (count - 1)) * (bottom - top) : top };
 }
 
