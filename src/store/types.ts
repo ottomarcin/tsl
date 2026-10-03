@@ -9,6 +9,8 @@ export type JumpSource = 'nav' | 'popstate' | 'url' | 'scroll';
 export interface ScrollApi {
   /** `smooth` animates the scroll (nav clicks); otherwise the position jumps (deep links, back/forward). */
   scrollToPage: (page: number, smooth?: boolean) => void;
+  /** Instantly scrolls to `progress` (0–1) within scene `page`. Used when something in the scene is dragged. */
+  scrollToSceneProgress: (page: number, progress: number) => void;
 }
 
 export interface AppState {

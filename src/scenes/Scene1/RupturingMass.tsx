@@ -6,6 +6,8 @@ import { cellState } from '../../lib/cytolysis';
 
 export interface RupturingMassProps {
   instances: MassInstance[];
+  /** Each cell's `waveCoordinate`. */
+  waveCoords: ArrayLike<number>;
   getProgress: () => number;
 }
 
@@ -17,7 +19,7 @@ const _color = new Color();
  * passes (deform), swells as the membrane gives way (rupture), then shrinks out of existence (fade). Cells brighten as
  * they destabilise. Fully derived from progress, so it replays in reverse.
  */
-export function RupturingMass({ instances, getProgress }: RupturingMassProps) {
+export function RupturingMass({ instances, waveCoords, getProgress }: RupturingMassProps) {
   const mesh = useRef<InstancedMesh>(null);
   const last = useRef(NaN);
 
@@ -25,7 +27,7 @@ export function RupturingMass({ instances, getProgress }: RupturingMassProps) {
     const m = mesh.current;
     if (!m) return;
     instances.forEach((inst, i) => {
-      const s = cellState(progress, inst.position[0]);
+      const s = cellState(progress, waveCoords[i]);
       const stretch = 1 + 0.25 * s.deform;
       const squash = 1 - 0.12 * s.deform;
       const swell = (1 + 0.45 * s.rupture) * s.alive * s.alive;

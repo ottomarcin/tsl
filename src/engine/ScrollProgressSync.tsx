@@ -29,7 +29,14 @@ export function ScrollProgressSync() {
   const settling = useRef<{ page: number; frames: number } | null>(null);
 
   useEffect(() => {
+    // Horizontal drags (the Scene 1 wavefront) must reach the pointer handlers; only vertical pans scroll natively.
+    scroll.el.style.touchAction = 'pan-y';
     registerScrollApi({
+      scrollToSceneProgress: (page: number, progress: number) => {
+        const el = scroll.el;
+        const max = el.scrollHeight - el.clientHeight;
+        if (max > 0) el.scrollTop = ((page + progress) / SCENE_COUNT) * max;
+      },
       scrollToPage: (page: number, smooth = false) => {
         const el = scroll.el;
         const max = el.scrollHeight - el.clientHeight;

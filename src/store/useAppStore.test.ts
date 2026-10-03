@@ -30,21 +30,21 @@ describe('useAppStore', () => {
 
     it('calls scrollApi.scrollToPage for nav-originated jumps', () => {
       const scrollToPage = vi.fn();
-      useAppStore.getState().registerScrollApi({ scrollToPage });
+      useAppStore.getState().registerScrollApi({ scrollToPage, scrollToSceneProgress: vi.fn() });
       useAppStore.getState().jumpToScene(2, { source: 'nav' });
       expect(scrollToPage).toHaveBeenCalledWith(2, true);
     });
 
     it('calls scrollApi.scrollToPage when no source is given (default: not scroll-originated)', () => {
       const scrollToPage = vi.fn();
-      useAppStore.getState().registerScrollApi({ scrollToPage });
+      useAppStore.getState().registerScrollApi({ scrollToPage, scrollToSceneProgress: vi.fn() });
       useAppStore.getState().jumpToScene(4);
       expect(scrollToPage).toHaveBeenCalledWith(4, true);
     });
 
     it('does NOT call scrollApi.scrollToPage when the jump originates from scroll itself', () => {
       const scrollToPage = vi.fn();
-      useAppStore.getState().registerScrollApi({ scrollToPage });
+      useAppStore.getState().registerScrollApi({ scrollToPage, scrollToSceneProgress: vi.fn() });
       useAppStore.getState().jumpToScene(2, { source: 'scroll' });
       expect(scrollToPage).not.toHaveBeenCalled();
       expect(useAppStore.getState().route).toEqual({ kind: 'scene', index: 2 });
@@ -61,13 +61,13 @@ describe('useAppStore', () => {
       // tree's ScrollProgressSync has mounted and registered its scroll API.
       useAppStore.getState().jumpToScene(4, { source: 'url' }); // no-op scroll call, scrollApi is null
       const scrollToPage = vi.fn();
-      useAppStore.getState().registerScrollApi({ scrollToPage });
+      useAppStore.getState().registerScrollApi({ scrollToPage, scrollToSceneProgress: vi.fn() });
       expect(scrollToPage).toHaveBeenCalledWith(4);
     });
 
     it('does not call scrollToPage on registration when the current route is landing', () => {
       const scrollToPage = vi.fn();
-      useAppStore.getState().registerScrollApi({ scrollToPage });
+      useAppStore.getState().registerScrollApi({ scrollToPage, scrollToSceneProgress: vi.fn() });
       expect(scrollToPage).not.toHaveBeenCalled();
     });
   });
@@ -149,7 +149,7 @@ describe('useAppStore', () => {
   describe('scroll-driven navigation', () => {
     it('asks for an instant scroll (no animation) for deep links and back/forward', () => {
       const scrollToPage = vi.fn();
-      useAppStore.getState().registerScrollApi({ scrollToPage });
+      useAppStore.getState().registerScrollApi({ scrollToPage, scrollToSceneProgress: vi.fn() });
       useAppStore.getState().jumpToScene(3, { source: 'popstate' });
       useAppStore.getState().jumpToScene(1, { source: 'url' });
       expect(scrollToPage).toHaveBeenNthCalledWith(1, 3, false);
@@ -158,7 +158,7 @@ describe('useAppStore', () => {
 
     it('does not animate the scroll for nav clicks under reduced motion', () => {
       const scrollToPage = vi.fn();
-      useAppStore.getState().registerScrollApi({ scrollToPage });
+      useAppStore.getState().registerScrollApi({ scrollToPage, scrollToSceneProgress: vi.fn() });
       useAppStore.getState().setReducedMotion(true);
       useAppStore.getState().jumpToScene(2, { source: 'nav' });
       expect(scrollToPage).toHaveBeenCalledWith(2, false);

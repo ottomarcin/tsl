@@ -5,6 +5,9 @@ import { seededRandom } from './massLayout';
  * Scroll-driven cytolysis model for Scene 1 (design spec §5.3, asset spec §3.2). Everything is a pure function of
  * scene progress (0–1), so scrolling back replays the event in reverse.
  */
+/** z of the camera-facing plane the bar is drawn on. */
+export const WAVE_PLANE_Z = 0.5;
+
 export const WAVE = {
   xMin: -6.5,
   xMax: 6.5,
@@ -13,8 +16,14 @@ export const WAVE = {
   pEnd: 0.66,
 } as const;
 
-/** Progress spans for one cell: deforming while the wave passes, then the membrane gives way, then it fades. */
-export const CELL_TIMING = { deform: 0.1, ruptureSnap: 0.04, fade: 0.25 } as const;
+/**
+ * Progress spans for one cell, relative to the moment the bar's leading edge reaches it ("arrival"). A cell strains as
+ * the bar approaches (`lead`), its membrane gives way as the edge touches it (`burstDelay` after arrival; 0 = at the
+ * edge), the tear completes within `ruptureSnap`, then it shrinks away (`fade`). The bar sweeps ~27 world units per
+ * unit of progress, so every 0.01 of delay puts the visible damage ~0.27 units farther behind the bar: the damage must
+ * read as done BY the bar, not trailing it. (An earlier 0.10 delay left a ~500 px gap between bar and damage.)
+ */
+export const CELL_TIMING = { lead: 0.06, burstDelay: 0, ruptureSnap: 0.02, fade: 0.2 } as const;
 
 export const PARTICLES = {
   perCellPerSystem: 30,
@@ -27,6 +36,16 @@ export const PARTICLES = {
   lifeSeconds: 6,
   upwardBias: 0.15,
 } as const;
+
+/**
+ * Where along the sweep axis the bar must be, drawn on its flat plane, to look like it touches this cell from the
+ * camera. Perspective pushes cells nearer the camera away from the centre line and pulls farther ones in, so the raw
+ * x would make the bar reach front cells late and back cells early (a visible gap between bar and damage).
+ */
+export function waveCoordinate(position: readonly [number, number, number], cameraDistance: number): number {
+  const cellDepth = Math.max(cameraDistance - position[2], 0.1);
+  return (position[0] * (cameraDistance - WAVE_PLANE_Z)) / cellDepth;
+}
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 const smooth = (t: number) => t * t * (3 - 2 * t);
@@ -51,7 +70,7 @@ export function arrivalProgress(x: number): number {
 
 /** Progress at which the cell at x ruptures (and emits its particles). */
 export function ruptureProgress(x: number): number {
-  return arrivalProgress(x) + CELL_TIMING.deform;
+  return arrivalProgress(x) + CELL_TIMING.burstDelay;
 }
 
 export interface CellState {
@@ -65,9 +84,9 @@ export interface CellState {
 
 export function cellState(progress: number, x: number): CellState {
   const arrive = arrivalProgress(x);
-  const burst = arrive + CELL_TIMING.deform;
+  const burst = ruptureProgress(x);
   return {
-    deform: smooth(clamp01((progress - arrive) / CELL_TIMING.deform)),
+    deform: smooth(clamp01((progress - (arrive - CELL_TIMING.lead)) / (CELL_TIMING.lead + CELL_TIMING.burstDelay))),
     rupture: smooth(clamp01((progress - burst) / CELL_TIMING.ruptureSnap)),
     alive: 1 - smooth(clamp01((progress - burst) / CELL_TIMING.fade)),
   };
@@ -113,15 +132,19 @@ export function fillParticleBuffers(
   positions: Float32Array,
   colors: Float32Array,
   cells: MassInstance[],
+  /** Each cell's `waveCoordinate`, which decides when it bursts. */
+  waveCoords: ArrayLike<number>,
   velocities: Float32Array,
   rgb: [number, number, number],
   progress: number,
+  /** 3: rgb pre-multiplied by brightness (additive blending). 4: full rgb + brightness as alpha (normal blending). */
+  colorStride: 3 | 4 = 3,
 ): void {
   const per = PARTICLES.perCellPerSystem;
   const dragK = PARTICLES.drag;
   for (let c = 0; c < cells.length; c++) {
     const [ox, oy, oz] = cells[c].position;
-    const life = (progress - ruptureProgress(ox)) / PARTICLES.lifeProgress;
+    const life = (progress - ruptureProgress(waveCoords[c])) / PARTICLES.lifeProgress;
     const b = particleBrightness(life);
     const t = Math.max(0, life) * PARTICLES.lifeSeconds;
     const travel = (1 - Math.exp(-dragK * t)) / dragK;
@@ -131,9 +154,17 @@ export function fillParticleBuffers(
       positions[i] = ox + velocities[i] * travel;
       positions[i + 1] = oy + velocities[i + 1] * travel - fall;
       positions[i + 2] = oz + velocities[i + 2] * travel;
-      colors[i] = rgb[0] * b;
-      colors[i + 1] = rgb[1] * b;
-      colors[i + 2] = rgb[2] * b;
+      if (colorStride === 4) {
+        const j = (c * per + k) * 4;
+        colors[j] = rgb[0];
+        colors[j + 1] = rgb[1];
+        colors[j + 2] = rgb[2];
+        colors[j + 3] = b;
+      } else {
+        colors[i] = rgb[0] * b;
+        colors[i + 1] = rgb[1] * b;
+        colors[i + 2] = rgb[2] * b;
+      }
     }
   }
 }

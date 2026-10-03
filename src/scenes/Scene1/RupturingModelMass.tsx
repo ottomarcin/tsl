@@ -11,6 +11,8 @@ import type { MassInstance } from '../../lib/massLayout';
 
 export interface RupturingModelMassProps {
   instances: MassInstance[];
+  /** Each cell's `waveCoordinate`. */
+  waveCoords: ArrayLike<number>;
   getProgress: () => number;
 }
 
@@ -21,7 +23,7 @@ const tint = new Color();
  * `ruptured` key and the membrane-tear shader (`_BURST` mask) follow the burst, then the cell shrinks away. Fully
  * derived from progress, so it replays in reverse. Suspends while loading: wrap in a ModelBoundary.
  */
-export function RupturingModelMass({ instances, getProgress }: RupturingModelMassProps) {
+export function RupturingModelMass({ instances, waveCoords, getProgress }: RupturingModelMassProps) {
   const gltf = useModel(tlsModels, 'cellRupture', 'instanced');
   const parts = useMemo(() => collectMeshes(gltf.scene), [gltf]);
   const drawOrder = tlsModels.models.cellRupture.drawOrder;
@@ -31,7 +33,7 @@ export function RupturingModelMass({ instances, getProgress }: RupturingModelMas
 
   const apply = (progress: number) => {
     instances.forEach((inst, i) => {
-      const s = cellState(progress, inst.position[0]);
+      const s = cellState(progress, waveCoords[i]);
       // The shape keys do the deforming; only the final fade is a scale.
       rig.setMatrixAt(i, massMatrix(inst, s.alive * s.alive));
       rig.setMorphsAt(i, { deforming: s.deform, ruptured: s.rupture });
