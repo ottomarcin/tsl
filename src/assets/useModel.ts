@@ -9,7 +9,25 @@ import { dracoDecoderPath, modelUrlsForScene, resolveModelUrl } from './resolveM
  */
 export function useModel(manifest: ModelManifest, id: string, usage: ModelUsage = 'single') {
   const quality = useAppStore((s) => s.modelQuality);
-  return useGLTF(resolveModelUrl(manifest, id, { quality, usage }), dracoDecoderPath());
+  const url = resolveModelUrl(manifest, id, { quality, usage });
+  try {
+    return useGLTF(url, dracoDecoderPath());
+  } catch (error) {
+    // A thrown Error is a failed download (a thrown promise is just "still loading"): note it so a retry can clear it.
+    if (error instanceof Error) failed.add(url);
+    throw error;
+  }
+}
+
+const failed = new Set<string>();
+
+/** Forgets the failed downloads, so the next attempt asks the network again instead of rethrowing the cached failure. */
+export function clearFailedModels(): void {
+  for (const url of failed) {
+    useGLTF.clear(url);
+    warmed.delete(url);
+  }
+  failed.clear();
 }
 
 const warmed = new Set<string>();

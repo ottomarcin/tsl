@@ -19,18 +19,19 @@ import { tlsContent } from './content/tls';
 // registry) would silently produce two different store singletons.
 
 const preloadScene = vi.fn();
+const clearFailedModels = vi.fn();
 
 async function setUpApp(webglSupported: boolean) {
   preloadScene.mockClear();
   // jsdom can't fetch/decode models; the loader itself is covered in assets/*.test.
-  vi.doMock('./assets/useModel', () => ({ preloadScene, useModel: vi.fn() }));
+  vi.doMock('./assets/useModel', () => ({ preloadScene, useModel: vi.fn(), clearFailedModels }));
   if (webglSupported) {
     vi.doMock('./hooks', async (importOriginal) => {
       const actual = await importOriginal<typeof import('./hooks')>();
       return { ...actual, useWebGLSupport: () => true };
     });
     vi.doMock('./engine/ScrollCanvas', () => ({
-      ScrollCanvas: () => <div data-testid="mock-scroll-canvas" />,
+      ScrollCanvas: ({ paused }: { paused?: boolean }) => <div data-testid="mock-scroll-canvas" data-paused={String(!!paused)} />,
     }));
   }
   const { App } = await import('./App');
@@ -53,6 +54,7 @@ describe('App', () => {
     vi.doUnmock('./hooks');
     vi.doUnmock('./engine/ScrollCanvas');
     vi.doUnmock('./assets/useModel');
+    vi.doUnmock('@react-three/drei');
     document.documentElement.removeAttribute('data-theme');
   });
 
@@ -511,6 +513,131 @@ describe('App', () => {
     it('has no map button where there is no map (before Scene 3, and Scene 5)', async () => {
       await openAt(390, '/scene/1');
       expect(screen.queryByRole('button', { name: 'Show cascade map' })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('resilience (design spec §10)', () => {
+    async function openScene(index: number, extraMocks?: () => void) {
+      window.history.replaceState(null, '', `/scene/${index}`);
+      extraMocks?.();
+      const { App, useAppStore } = await setUpApp(true);
+      const utils = render(<App />);
+      return { ...utils, useAppStore };
+    }
+
+    it('pauses the 3D scene while the tab is in the background and resumes it on return', async () => {
+      await openScene(2);
+      expect(screen.getByTestId('mock-scroll-canvas')).toHaveAttribute('data-paused', 'false');
+      const setVisibility = (state: string) => {
+        Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state });
+        document.dispatchEvent(new Event('visibilitychange'));
+      };
+      await act(async () => setVisibility('hidden'));
+      expect(screen.getByTestId('mock-scroll-canvas')).toHaveAttribute('data-paused', 'true');
+      await act(async () => setVisibility('visible'));
+      expect(screen.getByTestId('mock-scroll-canvas')).toHaveAttribute('data-paused', 'false');
+    });
+
+    it('shows a toast with a refresh action for an unexpected error, which closes itself after 8 seconds', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      try {
+        await openScene(2);
+        await act(async () => {
+          window.dispatchEvent(new ErrorEvent('error', { error: new Error('boom'), message: 'boom' }));
+        });
+        const alert = screen.getByRole('alert');
+        expect(alert).toHaveTextContent('Something went wrong');
+        expect(within(alert).getByRole('button', { name: 'Refresh' })).toBeInTheDocument();
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(8100);
+        });
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('shows one toast at a time: a second error does not replace the first', async () => {
+      await openScene(2);
+      await act(async () => {
+        window.dispatchEvent(new ErrorEvent('error', { error: new Error('one'), message: 'one' }));
+        window.dispatchEvent(new ErrorEvent('error', { error: new Error('two'), message: 'two' }));
+      });
+      expect(screen.getAllByRole('alert')).toHaveLength(1);
+    });
+
+    it('a model that fails to load raises a toast whose Retry clears the failed downloads and tries again', async () => {
+      await openScene(2);
+      const { reportModelError } = await import('./assets/loadErrors');
+      const retry = vi.fn();
+      await act(async () => reportModelError(new Error('404'), retry));
+      const alert = screen.getByRole('alert');
+      expect(alert).toHaveTextContent('Part of the 3D scene could not be loaded.');
+      await userEvent.click(within(alert).getByRole('button', { name: 'Retry' }));
+      expect(clearFailedModels).toHaveBeenCalledTimes(1);
+      expect(retry).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('a download that stalls for 30 seconds raises a toast with a Retry', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      try {
+        await openScene(2, () =>
+          vi.doMock('@react-three/drei', async (importOriginal) => {
+            const actual = await importOriginal<typeof import('@react-three/drei')>();
+            return { ...actual, useProgress: () => ({ active: true, progress: 40 }) };
+          }),
+        );
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(30_100);
+        });
+        expect(screen.getByRole('alert')).toHaveTextContent('Loading is taking longer than expected.');
+        expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('works without localStorage: nothing throws, the hint shows, the theme and the nav default', async () => {
+      vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+        throw new Error('denied');
+      });
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new Error('denied');
+      });
+      try {
+        const { useAppStore } = await openScene(0);
+        expect(useAppStore.getState().sideNavExpanded).toBe(true);
+        expect(useAppStore.getState().modelQuality).toBe('high');
+        expect(useAppStore.getState().accessibilityMode).toBe(false);
+        await userEvent.click(screen.getByRole('button', { name: /Switch to (light|dark) theme/ }));
+        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        expect(useAppStore.getState().accessibilityMode).toBe(true);
+      } finally {
+        vi.restoreAllMocks();
+      }
+    });
+
+    describe('print', () => {
+      it('prints the six scenes as text, one per page, without the navigation, the strip or the 3D scene', async () => {
+        await openScene(2);
+        await act(async () => {
+          window.dispatchEvent(new Event('beforeprint'));
+        });
+        const doc = screen.getByTestId('print-document');
+        expect(within(doc).getAllByRole('heading', { level: 1 })).toHaveLength(6);
+        for (const scene of tlsContent.scenes) expect(within(doc).getByRole('heading', { level: 1, name: `Scene ${scene.index}: ${scene.title}` })).toBeInTheDocument();
+        expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('mock-scroll-canvas')).not.toBeInTheDocument();
+        expect(within(doc).queryByRole('switch')).not.toBeInTheDocument();
+        expect(within(doc).getAllByText(/not a substitute for clinical judgment/)).toHaveLength(6);
+        await act(async () => {
+          window.dispatchEvent(new Event('afterprint'));
+        });
+        expect(screen.queryByTestId('print-document')).not.toBeInTheDocument();
+        expect(screen.getByTestId('mock-scroll-canvas')).toBeInTheDocument();
+      });
     });
   });
 

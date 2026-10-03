@@ -1,0 +1,71 @@
+/* Paper is light: the tokens are redefined here so the text view prints dark on white whichever theme is on screen. */
+.document {
+  --bg-canvas: #fff;
+  --bg-surface: #fff;
+  --text-primary: #111;
+  --text-secondary: #333;
+  --text-muted: #555;
+  --border-subtle: #bbb;
+  --monitor-trace: #111;
+  /* Paper sizes: the whole experience is long, so the text is set smaller than on screen. */
+  --font-size-body: 10pt;
+  --line-height-body: 14pt;
+  --font-size-body-lg: 11pt;
+  --line-height-body-lg: 15pt;
+  --font-size-body-sm: 9pt;
+  --line-height-body-sm: 12pt;
+  --font-size-mono-sm: 8.5pt;
+  --font-size-display-lg: 18pt;
+  --space-6: 0;
+  background: #fff;
+  color: #111;
+}
+
+.page {
+  break-after: page;
+  page-break-after: always;
+}
+
+.page:last-child {
+  break-after: auto;
+  page-break-after: auto;
+}
+
+.running {
+  width: 760px;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #555;
+}
+
+.footer {
+  width: 760px;
+  max-width: 100%;
+  margin: 8px auto 0;
+  padding: 0 24px;
+  font-size: 11px;
+  color: #555;
+}
+
+.page a {
+  color: #111;
+}
+
+@page {
+  margin: 14mm;
+}
+
+@media print {
+  .document article {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .document section {
+    break-inside: avoid;
+  }
+}

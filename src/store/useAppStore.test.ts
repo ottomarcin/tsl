@@ -280,4 +280,30 @@ describe('useAppStore', () => {
       expect(useAppStore.getState().modelQuality).toBe('standard');
     });
   });
+
+  describe('toast', () => {
+    it('shows one toast at a time and ignores another while it is up', () => {
+      expect(useAppStore.getState().showToast({ message: 'first' })).toBe(true);
+      expect(useAppStore.getState().showToast({ message: 'second' })).toBe(false);
+      expect(useAppStore.getState().toast?.message).toBe('first');
+    });
+    it('dismisses by id (a stale timer cannot close a newer toast) or without one', () => {
+      useAppStore.getState().showToast({ message: 'a' });
+      const id = useAppStore.getState().toast!.id;
+      useAppStore.getState().dismissToast(id + 1);
+      expect(useAppStore.getState().toast).not.toBeNull();
+      useAppStore.getState().dismissToast(id);
+      expect(useAppStore.getState().toast).toBeNull();
+      useAppStore.getState().showToast({ message: 'b' });
+      useAppStore.getState().dismissToast();
+      expect(useAppStore.getState().toast).toBeNull();
+    });
+    it('gives each toast its own id', () => {
+      useAppStore.getState().showToast({ message: 'a' });
+      const first = useAppStore.getState().toast!.id;
+      useAppStore.getState().dismissToast();
+      useAppStore.getState().showToast({ message: 'b' });
+      expect(useAppStore.getState().toast!.id).toBeGreaterThan(first);
+    });
+  });
 });

@@ -5,6 +5,8 @@ import { persistTheme, readDomTheme } from '../lib/theme';
 import { persistQuality, resolveInitialQuality } from '../lib/quality';
 import { persistTextOnly, resolveInitialTextOnly } from '../lib/accessibility';
 
+let toastId = 0;
+
 export const useAppStore = create<AppStore>((set, get) => ({
   route: { kind: 'landing' },
   routeSource: 'url',
@@ -20,6 +22,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   reducedMotion: false,
   accessibilityMode: resolveInitialTextOnly(),
   scrollApi: null,
+  toast: null,
 
   jumpToScene(index: number, opts?: { source?: JumpSource; progress?: number }) {
     const clamped = Math.max(0, Math.min(SCENE_COUNT - 1, index));
@@ -147,6 +150,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   toggleAccessibilityMode() {
     get().setAccessibilityMode(!get().accessibilityMode);
+  },
+
+  showToast(toast) {
+    if (get().toast) return false;
+    set({ toast: { ...toast, id: ++toastId } });
+    return true;
+  },
+
+  dismissToast(id) {
+    const current = get().toast;
+    if (current && (id === undefined || current.id === id)) set({ toast: null });
   },
 
   registerScrollApi(api) {

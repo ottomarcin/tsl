@@ -15,6 +15,15 @@ export interface ScrollApi {
   scrollBy: (deltaY: number) => void;
 }
 
+export interface ToastState {
+  id: number;
+  message: string;
+  /** One button, e.g. Retry or Refresh. */
+  action?: { label: string; onClick: () => void };
+  /** Closes itself after this many ms; stays until dismissed when absent. */
+  autoDismissMs?: number;
+}
+
 export interface AppState {
   route: AppRoute;
   /** What caused the last route change. Scroll-driven changes replace history instead of pushing. */
@@ -36,6 +45,8 @@ export interface AppState {
   modelQuality: ModelQuality;
   reducedMotion: boolean;
   accessibilityMode: boolean;
+  /** The message at the bottom right, if any (one at a time). */
+  toast: ToastState | null;
   /** Imperative plumbing to the scroll engine — not app state, never persisted. */
   scrollApi: ScrollApi | null;
 }
@@ -67,6 +78,9 @@ export interface AppActions {
   setAccessibilityMode: (enabled: boolean) => void;
   toggleAccessibilityMode: () => void;
   registerScrollApi: (api: ScrollApi | null) => void;
+  /** Shows a toast; ignored while another one is up. Returns whether it was shown. */
+  showToast: (toast: Omit<ToastState, 'id'>) => boolean;
+  dismissToast: (id?: number) => void;
 }
 
 export type AppStore = AppState & AppActions;

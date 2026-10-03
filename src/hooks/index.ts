@@ -6,3 +6,7 @@ export { useBreakpoint, breakpointForWidth } from './useBreakpoint';
 export type { Breakpoint } from './useBreakpoint';
 export { useMediaQuery } from './useMediaQuery';
 export { useAnnouncements } from './useAnnouncements';
+export { useDocumentVisible } from './useDocumentVisible';
+export { useLoadTimeout, LOAD_TIMEOUT_MS } from './useLoadTimeout';
+export { useGlobalErrors } from './useGlobalErrors';
+export { usePrinting } from './usePrinting';

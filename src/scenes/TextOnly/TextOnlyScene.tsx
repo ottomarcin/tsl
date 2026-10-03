@@ -8,9 +8,10 @@ import { FreePlayPanel } from '../Scene5/Scene5Controls';
 
 /**
  * A scene as text, with each step's labs. Scene 5's labs are the counterfactuals for the interventions of that step
- * (the first step is the T+0 baseline), and its last step carries the interactive panel, which is plain HTML.
+ * (the first step is the T+0 baseline), and its last step carries the interactive panel, which is plain HTML (left out
+ * when `interactive` is off, e.g. on paper).
  */
-export function TextOnlyScene({ sceneIndex }: { sceneIndex: number }) {
+export function TextOnlyScene({ sceneIndex, interactive = true }: { sceneIndex: number; interactive?: boolean }) {
   const scene = tlsContent.scenes[sceneIndex];
   const isScene5 = sceneIndex === SCENE5_INDEX;
   return (
@@ -27,7 +28,7 @@ export function TextOnlyScene({ sceneIndex }: { sceneIndex: number }) {
           : labValuesAt(tlsContent.scenes, sceneIndex, i)
       }
       timestampFor={(i) => (isScene5 ? hoursLabel(i === 0 ? 0 : 1) : timestampAt(tlsContent.scenes, sceneIndex, i))}
-      extraFor={isScene5 ? (i) => (i === FREE_PLAY_STEP ? <FreePlayPanel /> : null) : undefined}
+      extraFor={isScene5 && interactive ? (i) => (i === FREE_PLAY_STEP ? <FreePlayPanel /> : null) : undefined}
     />
   );
 }

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAppStore } from './store/useAppStore';
-import { useMediaQuery, useBreakpoint, useFirstRunHint, useReducedMotion, useRouteSync, useWebGLSupport, useAnnouncements } from './hooks';
+import { useMediaQuery, useBreakpoint, useFirstRunHint, useReducedMotion, useRouteSync, useWebGLSupport, useAnnouncements, useDocumentVisible, useGlobalErrors, useLoadTimeout, usePrinting } from './hooks';
 import { Menu } from 'lucide-react';
 import { ScrollCanvas } from './engine/ScrollCanvas';
 import { tlsContent } from './content/tls';
@@ -24,6 +24,11 @@ import { useScene5Labs } from './scenes/Scene5/useScene5Labs';
 import { SCENE5_INDEX } from './lib/scene5';
 import { EndCard } from './components/EndCard/EndCard';
 import { LiveAnnouncer } from './components/LiveAnnouncer/LiveAnnouncer';
+import { Toast } from './components/Toast/Toast';
+import { PrintDocument } from './scenes/TextOnly/PrintDocument';
+import { CanvasBoundary } from './engine/CanvasBoundary';
+import { clearFailedModels } from './assets/useModel';
+import { onModelError, retryModelErrors } from './assets/loadErrors';
 import { MinimapToggle } from './components/MinimapToggle/MinimapToggle';
 import { LegendRows } from './components/ColorLegend/LegendRows';
 import { Modal } from './components/Modal/Modal';
@@ -111,6 +116,11 @@ export function App() {
   const restart = useAppStore((s) => s.restart);
   const textOnly = useAppStore((s) => s.accessibilityMode);
   const toggleTextOnly = useAppStore((s) => s.toggleAccessibilityMode);
+  const toast = useAppStore((s) => s.toast);
+  const showToast = useAppStore((s) => s.showToast);
+  const dismissToast = useAppStore((s) => s.dismissToast);
+  const printing = usePrinting();
+  const pageVisible = useDocumentVisible();
 
   useRouteSync();
 
@@ -150,6 +160,32 @@ export function App() {
   const scene5Timestamp = useScene5Labs(inScene5, stepIndex);
   const announcement = useAnnouncements(activeScene, tlsContent.metrics, labValues);
 
+  // Resilience (design spec §10). A download that stalls for 30 s, a model that fails to load and an unexpected error each
+  // get one toast with a way forward; only one toast is up at a time.
+  useLoadTimeout(assetsLoading, () => showToast({ message: 'Loading is taking longer than expected.', action: { label: 'Retry', onClick: () => window.location.reload() } }));
+  useEffect(
+    () =>
+      onModelError(() =>
+        showToast({
+          message: 'Part of the 3D scene could not be loaded.',
+          action: {
+            label: 'Retry',
+            onClick: () => {
+              clearFailedModels();
+              retryModelErrors();
+              dismissToast();
+            },
+          },
+        }),
+      ),
+    [showToast, dismissToast],
+  );
+  const onUnexpectedError = useCallback(
+    () => showToast({ message: 'Something went wrong. Refresh the page if it stops responding.', action: { label: 'Refresh', onClick: () => window.location.reload() }, autoDismissMs: 8000 }),
+    [showToast],
+  );
+  useGlobalErrors(onUnexpectedError);
+
   // The document title follows the scene (design spec §9).
   useEffect(() => {
     document.title = pageTitle(
@@ -157,6 +193,9 @@ export function App() {
       route.kind === 'scene' ? { kind: 'scene', index: route.index, title: tlsContent.scenes[route.index].title } : { kind: route.kind },
     );
   }, [route]);
+
+  // On paper: all six scenes as text, nothing else.
+  if (printing) return <PrintDocument />;
 
   if (!webglSupported) {
     return (
@@ -170,15 +209,22 @@ export function App() {
     );
   }
 
+  const toastElement = toast && (
+    <Toast key={toast.id} message={toast.message} action={toast.action} autoDismissMs={toast.autoDismissMs} onDismiss={() => dismissToast(toast.id)} />
+  );
+
   if (route.kind === 'landing') {
     return (
-      <LandingScreen
+      <>
+        <LandingScreen
         content={tlsContent.landing}
         theme={theme}
         onToggleTheme={toggleTheme}
         webglSupported
         onBegin={() => jumpToScene(0)}
       />
+        {toastElement}
+      </>
     );
   }
 
@@ -287,7 +333,9 @@ export function App() {
               if (to) jumpToStep(to.scene, to.step, tlsContent.scenes[to.scene].steps.length);
             }}
           >
-            <ScrollCanvas viewShift={shortViewport && !isMobile ? 0.22 : 0} />
+            <CanvasBoundary onTextOnly={toggleTextOnly}>
+            <ScrollCanvas viewShift={shortViewport && !isMobile ? 0.22 : 0} paused={!pageVisible} />
+          </CanvasBoundary>
             {scene?.chips && <ChipCluster chips={scene.chips} phase={chipPhase} reducedMotion={reducedMotion} layout={isMobile ? 'column' : 'ring'} shifted={shortViewport && !isMobile} />}
             {scene?.summaryBadge && (
               <div className={styles.badgeSlot}>
@@ -345,6 +393,7 @@ export function App() {
       <Modal open={legendOpen} onOpenChange={setLegendOpen} title="Legend" variant="sheet">
         <LegendRows items={LEGEND_ITEMS} />
       </Modal>
+      {toastElement}
       <ReplaySceneModal
         open={replayOpen}
         onOpenChange={setReplayOpen}

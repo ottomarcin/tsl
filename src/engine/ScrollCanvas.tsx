@@ -34,9 +34,10 @@ function CanvasBackground() {
  * scroll proxy across all 6 scenes) — this is what makes deep-linking into
  * /scene/3 without scrolling through 0–2 possible (tech arch §6).
  */
-export function ScrollCanvas({ viewShift = 0 }: { viewShift?: number }) {
+export function ScrollCanvas({ viewShift = 0, paused = false }: { viewShift?: number; paused?: boolean }) {
   return (
-    <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
+    // 'never' stops rendering and the clock's frames while the tab is in the background (design spec §10).
+    <Canvas camera={{ position: [0, 0, 5], fov: 50 }} frameloop={paused ? 'never' : 'always'}>
       <CanvasBackground />
       {/* Asset spec §1.5 three-light rig, shared by every scene. */}
       <ambientLight color="#404448" intensity={LIGHT_RIG.fill} />

@@ -1,4 +1,5 @@
 import { Component, Suspense, type ErrorInfo, type ReactNode } from 'react';
+import { reportModelError } from './loadErrors';
 
 export interface ModelBoundaryProps {
   children: ReactNode;
@@ -23,6 +24,7 @@ export class ModelBoundary extends Component<ModelBoundaryProps, State> {
   }
 
   componentDidCatch(error: Error, _info: ErrorInfo) {
+    reportModelError(error, this.retry);
     this.props.onError?.(error, this.retry);
   }
 
