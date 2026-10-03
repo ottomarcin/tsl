@@ -62,4 +62,17 @@ export const scene3: SceneDefinition = {
       },
     },
   ],
+  // The four mechanisms of step 3.3. The wording of the hints and the "emerging" qualifier on histone injury are
+  // open clinical-review points (S3.1-S3.3 in tls_clinical_review_questions.md).
+  toggle: {
+    label: 'Injury mechanism',
+    fromStep: 3,
+    defaultId: 'obstruction',
+    options: [
+      { id: 'obstruction', label: 'Obstruction', hint: 'Crystals lodge in the lumen and block flow.' },
+      { id: 'cytotoxicity', label: 'Direct cytotoxicity', hint: 'Crystals injure the tubular cells they touch.' },
+      { id: 'vasoconstriction', label: 'Vasoconstriction', hint: 'The afferent arteriole narrows; perfusion of the tubule falls.' },
+      { id: 'histone', label: 'Histone-mediated', badge: 'emerging', hint: 'Histones released from lysed cells damage the endothelium. Evidence is still emerging.' },
+    ],
+  },
 };

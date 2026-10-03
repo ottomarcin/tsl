@@ -31,7 +31,8 @@
 .minimapFloating {
   position: absolute;
   top: 24px;
-  right: 80px;
+  /* Clear of the two toggles (quality, theme) at the top right. */
+  right: 108px;
   z-index: var(--z-persistent-ui);
 }
 
@@ -130,4 +131,30 @@
   transform: translate(-50%, -50%);
   z-index: var(--z-scene-chrome);
   pointer-events: none;
+}
+
+.modeToggleFloating {
+  position: absolute;
+  top: var(--space-4);
+  /* Left of the minimap (top right), which is 180px wide plus the toggles' margin. */
+  right: 340px;
+  z-index: var(--z-persistent-ui);
+  width: max-content;
+  max-width: calc(100% - 340px - var(--space-4));
+}
+
+/* Not enough room beside the minimap: it is hidden below desktop width (Epic 11 turns it into an icon that opens it)
+   and the toggle sits under the header row instead. */
+@media (max-width: 1279px) {
+  .minimapFloating {
+    display: none;
+  }
+
+  .modeToggleFloating {
+    top: 72px;
+    left: var(--space-4);
+    right: var(--space-4);
+    width: auto;
+    max-width: none;
+  }
 }

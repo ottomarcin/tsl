@@ -101,13 +101,13 @@ describe('App', () => {
     const { rerender } = render(<App />);
     // Query by the minimap's own accessible role, not a bare `svg` selector —
     // SideNav's Lucide icons (Check/Circle) are also <svg> elements.
-    expect(screen.queryByRole('img', { name: 'Cascade progress minimap' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: /Cascade progress minimap/ })).not.toBeInTheDocument();
 
     await act(async () => {
       useAppStore.getState().jumpToScene(3, { source: 'nav' });
     });
     rerender(<App />);
-    expect(screen.getByRole('img', { name: 'Cascade progress minimap' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /Cascade progress minimap/ })).toBeInTheDocument();
   });
 
   it('shows a placeholder for the end card when the route is /end', async () => {
@@ -188,6 +188,72 @@ describe('App', () => {
     });
   });
 
+  describe('Scene 3 step bindings and the mechanism toggle', () => {
+    async function openScene3AtProgress(progress: number) {
+      window.history.replaceState(null, '', '/scene/3');
+      const { App, useAppStore } = await setUpApp(true);
+      const utils = render(<App />);
+      await act(async () => {
+        useAppStore.getState().setSceneProgress(progress);
+      });
+      return { ...utils, useAppStore };
+    }
+    const steps = tlsContent.scenes[3].steps;
+
+    it('step 3.1: creatinine is still normal (the labs lag the mechanism) at T+30h', async () => {
+      const { useAppStore } = await openScene3AtProgress(0.1);
+      expect(screen.getByText(steps[0].caption)).toBeInTheDocument();
+      expect(useAppStore.getState().labValues.Cr).toBe(0.9);
+      expect(screen.getAllByText('T+30h').length).toBeGreaterThan(0);
+    });
+
+    it('step 3.2: creatinine turns amber at 1.4', async () => {
+      const { useAppStore } = await openScene3AtProgress(0.35);
+      expect(useAppStore.getState().labValues.Cr).toBe(1.4);
+    });
+
+    it('step 3.4: all the upstream labs rise and are flagged', async () => {
+      const { useAppStore } = await openScene3AtProgress(0.9);
+      expect(useAppStore.getState().labValues).toMatchObject({ Cr: 2.8, K: 6.3, PO4: 7.5, UA: 11 });
+      expect(screen.getAllByText('T+48h').length).toBeGreaterThan(0);
+    });
+
+    it('shows the cascade minimap here for the first time, with the kidney lit', async () => {
+      await openScene3AtProgress(0.1);
+      expect(screen.getByRole('img', { name: /Cascade progress minimap/ })).toBeInTheDocument();
+      expect(screen.getByTestId('minimap-kidney')).toHaveAttribute('data-lit', 'true');
+    });
+
+    it('offers the four mechanisms from step 3.3 only, with histone marked emerging', async () => {
+      const early = await openScene3AtProgress(0.35);
+      expect(screen.queryByRole('tablist', { name: 'Injury mechanism' })).not.toBeInTheDocument();
+      early.unmount();
+      vi.resetModules();
+      const { unmount } = await openScene3AtProgress(0.6);
+      expect(screen.getAllByRole('tab')).toHaveLength(4);
+      expect(screen.getByText('emerging')).toBeInTheDocument();
+      unmount();
+    });
+
+    it('selecting a mechanism stores the choice for the scene, with obstruction as the default', async () => {
+      const { useAppStore } = await openScene3AtProgress(0.6);
+      expect(screen.getByRole('tab', { name: 'Obstruction' })).toHaveAttribute('aria-selected', 'true');
+      await userEvent.click(screen.getByRole('tab', { name: /vasoconstriction/i }));
+      expect(useAppStore.getState().modeSelection['scene-3']).toBe('vasoconstriction');
+      expect(screen.getByRole('tab', { name: /vasoconstriction/i })).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByText(/afferent arteriole narrows/i)).toBeVisible();
+    });
+
+    it('has no accessibility violations at any step', async () => {
+      for (const p of [0.1, 0.35, 0.6, 0.9]) {
+        const { container, unmount } = await openScene3AtProgress(p);
+        expect(await axe(container)).toHaveNoViolations();
+        unmount();
+        vi.resetModules();
+      }
+    });
+  });
+
   describe('Scene 2 step bindings', () => {
     async function openScene2AtProgress(progress: number) {
       window.history.replaceState(null, '', '/scene/2');
@@ -232,7 +298,7 @@ describe('App', () => {
 
     it('does not show the cascade minimap yet (it starts in Scene 3)', async () => {
       await openScene2AtProgress(0.9);
-      expect(screen.queryByRole('img', { name: 'Cascade progress minimap' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('img', { name: /Cascade progress minimap/ })).not.toBeInTheDocument();
     });
 
     it('states the 70 mg²/dL² threshold in the step 2.2 Learn more panel', async () => {

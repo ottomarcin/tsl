@@ -15,10 +15,12 @@ export interface ScenePointLabelProps {
   getOpacity?: () => number;
   /** Smaller and dimmer, for secondary markers such as the enzyme. */
   subtle?: boolean;
+  /** A caption-sized label, for text that carries a message rather than naming a part. */
+  large?: boolean;
 }
 
 /** A text label pinned to a point in the 3D scene (drei Html). Never takes pointer events. */
-export function ScenePointLabel({ position, text, color, opacity = 1, getOpacity, subtle = false }: ScenePointLabelProps) {
+export function ScenePointLabel({ position, text, color, opacity = 1, getOpacity, subtle = false, large = false }: ScenePointLabelProps) {
   const span = useRef<HTMLSpanElement>(null);
   useFrame(() => {
     if (getOpacity && span.current) span.current.style.opacity = String(getOpacity());
@@ -29,7 +31,7 @@ export function ScenePointLabel({ position, text, color, opacity = 1, getOpacity
   const portal = useMemo(() => ({ current: container as HTMLElement }), [container]);
   return (
     <Html position={position} center zIndexRange={[5, 0]} portal={portal} style={{ pointerEvents: 'none' }}>
-      <span ref={span} className={[styles.label, subtle ? styles.subtle : ''].join(' ')} style={{ color, opacity: getOpacity ? 0 : opacity }}>
+      <span ref={span} className={[styles.label, subtle ? styles.subtle : '', large ? styles.large : ''].join(' ')} style={{ color, opacity: getOpacity ? 0 : opacity }}>
         {text}
       </span>
     </Html>

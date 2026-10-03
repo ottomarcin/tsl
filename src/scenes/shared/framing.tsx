@@ -9,6 +9,7 @@ export const FramingContext = createContext<CameraContext>({
   massDistance: 14,
   cascadeDistance: 12.5,
   cascadeTargetY: -5.4,
+  tubuleDistance: 13,
   keepFullFraming: false,
 });
 

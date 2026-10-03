@@ -13,6 +13,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   labValues: {},
   sideNavExpanded: true,
   interventionState: {},
+  modeSelection: {},
   modelQuality: resolveInitialQuality(window.location.search),
   reducedMotion: false,
   accessibilityMode: false,
@@ -79,6 +80,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   setLabValues(values: Record<string, number>) {
     set((state) => ({ labValues: { ...state.labValues, ...values } }));
+  },
+
+  setMode(sceneId: string, optionId: string) {
+    set((state) => ({ modeSelection: { ...state.modeSelection, [sceneId]: optionId } }));
   },
 
   setInterventionState(id: string, value: number | boolean) {

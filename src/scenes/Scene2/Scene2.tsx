@@ -83,6 +83,7 @@ export function Scene2({ reducedMotion = false }: Scene2Props) {
               getReveal={() => streamReveal(id, getProgress())}
               getEmphasis={() => streamEmphasis(id, getProgress())}
               blend={blend}
+              getPresence={getPresence}
             />
           )}
         </group>
@@ -96,6 +97,7 @@ export function Scene2({ reducedMotion = false }: Scene2Props) {
         showBase={false}
         dashed={reducedMotion}
         blend={blend}
+        getPresence={getPresence}
       />
 
       {/* Models load independently; a failure or a slow connection leaves the streams and the pool in place. */}
@@ -116,6 +118,7 @@ export function Scene2({ reducedMotion = false }: Scene2Props) {
           enzymeLabel={ENZYME_LABEL}
           moleculeColor="var(--mol-purines)"
           getProgress={getProgress}
+          getPresence={getPresence}
           reducedMotion={reducedMotion}
         />
       </ModelBoundary>
@@ -127,10 +130,10 @@ export function Scene2({ reducedMotion = false }: Scene2Props) {
         reducedMotion={reducedMotion}
       />
       <ModelBoundary>
-        <CrystalFlow kind="caphos" modelId="crystalCaPhos" getProgress={getProgress} reducedMotion={reducedMotion} />
+        <CrystalFlow kind="caphos" modelId="crystalCaPhos" getProgress={getProgress} getPresence={getPresence} reducedMotion={reducedMotion} />
       </ModelBoundary>
       <ModelBoundary>
-        <CrystalFlow kind="uricacid" modelId="crystalUricAcid" getProgress={getProgress} reducedMotion={reducedMotion} />
+        <CrystalFlow kind="uricacid" modelId="crystalUricAcid" getProgress={getProgress} getPresence={getPresence} reducedMotion={reducedMotion} />
       </ModelBoundary>
     </group>
   );

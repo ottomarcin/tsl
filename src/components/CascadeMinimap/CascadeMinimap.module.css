@@ -1,21 +1,91 @@
 .panel {
-  width: 180px;
-  height: 220px;
+  width: 196px;
   background: var(--bg-overlay);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  overflow: hidden;
+}
+
+.title {
+  align-self: stretch;
+  margin: 0;
+  padding: var(--space-2) var(--space-3) 0;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-label);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.laneLabel {
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.here {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  align-self: stretch;
+  margin: 0;
+  padding: 0 var(--space-3) var(--space-2);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body-sm);
+  color: var(--text-primary);
+}
+
+.hereDot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--monitor-trace);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--monitor-trace) 25%, transparent);
 }
 
 .highlighted {
   filter: drop-shadow(0 0 3px var(--monitor-trace));
 }
 
+/* Where we are: the kidney ring breathes. */
+.pulse {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.18);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse {
+    animation: none;
+    opacity: 0.8;
+  }
+
+  /* The drifting particles are decoration: leave the static lanes. */
+  .flow {
+    display: none;
+  }
+}
+
 @media (max-width: 767px) {
   .panel {
-    width: 140px;
-    height: 170px;
+    width: 164px;
   }
 }

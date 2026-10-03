@@ -40,7 +40,11 @@ export function ScrollProgressSync() {
   useEffect(() => {
     // Horizontal drags (the Scene 1 wavefront) must reach the pointer handlers; only vertical pans scroll natively.
     scroll.el.style.touchAction = 'pan-y';
+    scroll.el.setAttribute('data-scroll-proxy', '');
     registerScrollApi({
+      scrollBy: (deltaY: number) => {
+        scroll.el.scrollTop += deltaY;
+      },
       scrollToSceneProgress: (page: number, progress: number) => {
         const el = scroll.el;
         const max = el.scrollHeight - el.clientHeight;

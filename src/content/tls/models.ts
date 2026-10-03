@@ -51,13 +51,31 @@ export const tlsModels: ModelManifest = {
     // 15-20 copies each, tiny: the light files are plenty on every tier.
     crystalCaPhos: {
       standard: 's2_crystal_caphos.glb',
-      scenes: [2],
+      scenes: [2, 3],
       usages: ['instanced'],
     },
     crystalUricAcid: {
       standard: 's2_crystal_uricacid.glb',
-      scenes: [2],
+      scenes: [2, 3],
       usages: ['instanced'],
+    },
+    nephron: {
+      standard: 's3_nephron_tubule.glb',
+      high: 'hd/s3_nephron_tubule.glb',
+      scenes: [3],
+      usages: ['single'],
+    },
+    capillaries: {
+      standard: 's3_vasoconstriction.glb',
+      high: 'hd/s3_vasoconstriction.glb',
+      scenes: [3],
+      usages: ['single'],
+    },
+    feedbackArrow: {
+      standard: 's3_feedback_arrow.glb',
+      high: 'hd/s3_feedback_arrow.glb',
+      scenes: [3],
+      usages: ['single'],
     },
     cellRupture: {
       standard: 's1_cell_rupture.glb',

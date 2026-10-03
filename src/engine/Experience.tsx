@@ -2,8 +2,9 @@ import { useLayoutEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import type { PerspectiveCamera } from 'three';
 import { DevPlaceholderMesh } from './DevPlaceholderMesh';
-import { cameraPoseAt, SCENE2_OFFSET, type CameraContext } from '../lib/timeline';
+import { cameraPoseAt, SCENE2_OFFSET, SCENE3_OFFSET, type CameraContext } from '../lib/timeline';
 import { Scene2, CASCADE_EXTENT, CASCADE_LOOK_AT_Y } from '../scenes/Scene2/Scene2';
+import { Scene3, TUBULE_EXTENT } from '../scenes/Scene3/Scene3';
 import { FramingContext } from '../scenes/shared/framing';
 import { cameraDistanceFor, cameraDistanceForExtent, useViewShift } from '../scenes/shared/useSceneFraming';
 import { useGetG } from '../scenes/shared/useGetG';
@@ -33,6 +34,7 @@ export function Experience({ viewShift = 0 }: ExperienceProps) {
       massDistance: cameraDistanceFor(aspect),
       cascadeDistance: cameraDistanceForExtent(aspect, CASCADE_EXTENT),
       cascadeTargetY: CASCADE_LOOK_AT_Y + SCENE2_OFFSET[1],
+      tubuleDistance: cameraDistanceForExtent(aspect, TUBULE_EXTENT),
       // "Slightly closer" than the full framing only where the mass still fits; narrow or shifted layouts keep it.
       keepFullFraming: aspect < 1.2 || viewShift > 0,
     }),
@@ -56,15 +58,17 @@ export function Experience({ viewShift = 0 }: ExperienceProps) {
   const index = route.kind === 'scene' ? route.index : 0;
   const tumor = index <= 3;
   const cascade = index >= 1 && index <= 3;
-  const placeholder = index >= 3;
+  const nephron = index >= 2 && index <= 3;
+  const placeholder = index >= 4;
 
   return (
     <FramingContext.Provider value={framing}>
       {tumor && <TumorStage reducedMotion={reducedMotion} />}
       {cascade && <Scene2 reducedMotion={reducedMotion} />}
-      {/* Scenes 3–5 have no 3D content yet (Epics 6–8): a stand-in where the camera rests. */}
+      {nephron && <Scene3 reducedMotion={reducedMotion} />}
+      {/* Scenes 4–5 have no 3D content yet (Epics 7–8): a stand-in where the camera rests. */}
       {placeholder && (
-        <group position={[0, framing.cascadeTargetY, 0]}>
+        <group position={SCENE3_OFFSET}>
           <DevPlaceholderMesh />
         </group>
       )}

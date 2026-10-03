@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
   CLOUD_SPAN,
   CLOUD_START,
+  SCENE3_OFFSET,
+  TUBULE_LOOK_DY,
+  TUBULE_START,
+  tubulePresence,
+  tubuleScale,
+  tubuleTransition,
+  KIDNEY_ZOOM_DISTANCE,
+  TUBULE_BIRTH_SCALE,
   MASS_TURN,
   cameraPoseAt,
   cascadePresence,
@@ -12,7 +20,7 @@ import {
   type CameraContext,
 } from './timeline';
 
-const ctx: CameraContext = { massDistance: 14, cascadeDistance: 12, cascadeTargetY: -5.4, keepFullFraming: false };
+const ctx: CameraContext = { massDistance: 14, cascadeDistance: 12, cascadeTargetY: -5.4, tubuleDistance: 13, keepFullFraming: false };
 
 describe('localProgress', () => {
   it('is 0–1 inside a scene and clamped outside it', () => {
@@ -54,7 +62,7 @@ describe('camera', () => {
   });
 
   it('is continuous across every scene boundary and through the hand-over: no jump anywhere', () => {
-    for (const boundary of [1, CLOUD_START, 2, 2.5]) {
+    for (const boundary of [1, CLOUD_START, 2, 2.5, TUBULE_START, 3]) {
       const a = cameraPoseAt(boundary - 1e-6, ctx);
       const b = cameraPoseAt(boundary + 1e-6, ctx);
       expect(b.position[2]).toBeCloseTo(a.position[2], 3);
@@ -66,9 +74,10 @@ describe('camera', () => {
 
   it('never moves faster than a small step between neighbouring points on the timeline', () => {
     let prev = cameraPoseAt(0, ctx);
-    for (let g = 0.01; g <= 3.2; g += 0.01) {
+    for (let g = 0.01; g <= 4.2; g += 0.01) {
       const p = cameraPoseAt(g, ctx);
       expect(Math.abs(p.position[2] - prev.position[2])).toBeLessThan(2.2);
+      // The flight down to the nephron covers ~17 units over 0.14 of the timeline.
       expect(Math.abs(p.position[1] - prev.position[1])).toBeLessThan(2.2);
       expect(Math.abs(p.fov - prev.fov)).toBeLessThan(2);
       prev = p;
@@ -86,8 +95,8 @@ describe('camera', () => {
     expect(p.target[1]).toBeCloseTo(-5.4, 6);
   });
 
-  it('arrives on the cascade framing and holds it', () => {
-    for (const g of [2, 2.2, 2.6, 3, 4]) {
+  it('arrives on the cascade framing and holds it until the flight down', () => {
+    for (const g of [2, 2.2, 2.6, TUBULE_START]) {
       const p = cameraPoseAt(g, ctx);
       expect(p.position[2]).toBeCloseTo(12, 6);
       expect(p.position[1]).toBeCloseTo(-5.4, 6);
@@ -100,6 +109,72 @@ describe('camera', () => {
     const narrow = { ...ctx, keepFullFraming: true };
     expect(cameraPoseAt(0.95, narrow).position[2]).toBeGreaterThanOrEqual(14);
     expect(cameraPoseAt(1.2, narrow).position[2]).toBeGreaterThanOrEqual(14);
+  });
+});
+
+describe('nephron hand-over: dive into the kidney, then the tubule', () => {
+  const dive = (u: number) => TUBULE_START + u * (3 - TUBULE_START);
+
+  it('every scene start looks like its scene: at g = 3 the camera is on the tubule, which sits where the kidney is', () => {
+    const p = cameraPoseAt(3, ctx);
+    expect(p.position[1]).toBeCloseTo(SCENE3_OFFSET[1] + TUBULE_LOOK_DY, 6);
+    expect(p.target[1]).toBeCloseTo(SCENE3_OFFSET[1] + TUBULE_LOOK_DY, 6);
+    expect(p.position[2]).toBeCloseTo(13, 6);
+  });
+
+  it('the tubule is centred on the kidney, so it appears inside it', () => {
+    expect(SCENE3_OFFSET[1]).toBeCloseTo(-4.3 - 5.45, 6);
+  });
+
+  it('first pushes in on the kidney until it fills the frame', () => {
+    const near = cameraPoseAt(dive(0.55), ctx);
+    expect(near.position[2]).toBeCloseTo(KIDNEY_ZOOM_DISTANCE, 6);
+    expect(near.target[1]).toBeCloseTo(SCENE3_OFFSET[1], 6);
+    expect(near.position[2]).toBeLessThan(cameraPoseAt(TUBULE_START, ctx).position[2]);
+    // Distance falls steadily through the push-in.
+    let prev = Infinity;
+    for (let u = 0; u <= 0.55; u += 0.05) {
+      const d = cameraPoseAt(dive(u), ctx).position[2];
+      expect(d).toBeLessThanOrEqual(prev + 1e-9);
+      prev = d;
+    }
+  });
+
+  it('then settles back out to frame the tubule, which has grown to full size', () => {
+    expect(cameraPoseAt(dive(0.8), ctx).position[2]).toBeGreaterThan(KIDNEY_ZOOM_DISTANCE);
+    expect(cameraPoseAt(dive(1), ctx).position[2]).toBeCloseTo(13, 6);
+  });
+
+  it('the tubule is born small, inside the kidney, and grows only once the camera is in close', () => {
+    expect(tubuleScale(TUBULE_START)).toBeCloseTo(TUBULE_BIRTH_SCALE, 9);
+    expect(tubuleScale(dive(0.3))).toBeCloseTo(TUBULE_BIRTH_SCALE, 9);
+    expect(tubuleScale(3)).toBe(1);
+    let prev = 0;
+    for (let u = 0; u <= 1; u += 0.05) {
+      const k = tubuleScale(dive(u));
+      expect(k).toBeGreaterThanOrEqual(prev - 1e-9);
+      prev = k;
+    }
+  });
+
+  it('the tubule fades in as the kidney fills the frame, and the cascade fades out behind it, with an overlap', () => {
+    expect(tubulePresence(dive(0.3))).toBe(0);
+    expect(tubulePresence(dive(0.9))).toBe(1);
+    expect(cascadePresence(dive(0.1))).toBe(1);
+    expect(cascadePresence(dive(0.95))).toBe(0);
+    expect(cascadePresence(3)).toBe(0);
+    // Somewhere in the middle both are partly there: a cross-fade, not a cut.
+    const mid = dive(0.62);
+    expect(cascadePresence(mid)).toBeGreaterThan(0);
+    expect(cascadePresence(mid)).toBeLessThan(1);
+    expect(tubulePresence(mid)).toBeGreaterThan(0);
+  });
+
+  it('the dive completes at the scene start and creeps in a little through Scene 3, then holds', () => {
+    expect(tubuleTransition(TUBULE_START)).toBe(0);
+    expect(tubuleTransition(3)).toBe(1);
+    expect(cameraPoseAt(3.6, ctx).position[2]).toBeLessThan(cameraPoseAt(3, ctx).position[2]);
+    expect(cameraPoseAt(4, ctx).position[2]).toBeCloseTo(cameraPoseAt(5, ctx).position[2], 9);
   });
 });
 

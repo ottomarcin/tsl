@@ -261,7 +261,7 @@ describe('TumorStage wavefront dragging', () => {
   const start = async () => {
     useModel.mockImplementation(pending);
     const scrollToSceneProgress = vi.fn();
-    useAppStore.setState({ scrollApi: { scrollToPage: vi.fn(), scrollToSceneProgress }, globalProgress: 1.4 });
+    useAppStore.setState({ scrollApi: { scrollToPage: vi.fn(), scrollBy: vi.fn(), scrollToSceneProgress }, globalProgress: 1.4 });
     const renderer = await ReactThreeTestRenderer.create(<TumorStage />);
     await ReactThreeTestRenderer.act(async () => {
       await renderer.advanceFrames(1, 16);

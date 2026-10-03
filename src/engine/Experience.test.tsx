@@ -9,6 +9,10 @@ vi.mock('../scenes/Scene2/Scene2', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../scenes/Scene2/Scene2')>();
   return { ...actual, Scene2: () => <group name="cascade" /> };
 });
+vi.mock('../scenes/Scene3/Scene3', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../scenes/Scene3/Scene3')>();
+  return { ...actual, Scene3: () => <group name="nephron" /> };
+});
 vi.mock('./DevPlaceholderMesh', () => ({ DevPlaceholderMesh: () => <group name="placeholder" /> }));
 
 const { Experience } = await import('./Experience');
@@ -37,9 +41,10 @@ describe('Experience: what is mounted', () => {
   it.each([
     [0, ['tumor']],
     [1, ['tumor', 'cascade']],
-    [2, ['tumor', 'cascade']],
-    [3, ['tumor', 'cascade', 'anchor']],
+    [2, ['tumor', 'cascade', 'nephron']],
+    [3, ['tumor', 'cascade', 'nephron']],
     [4, ['anchor']],
+    [5, ['anchor']],
   ])('scene %i', async (index, expected) => {
     setRoute(index);
     const renderer = await mount();
@@ -66,6 +71,7 @@ describe('Experience: the camera', () => {
     massDistance: Math.max(14, 6.2 / (Math.tan((25 * Math.PI) / 180) * Math.min(1, aspect))),
     cascadeDistance: Math.max(6.1 / Math.tan((25 * Math.PI) / 180), 7.2 / (Math.tan((25 * Math.PI) / 180) * aspect)),
     cascadeTargetY: -5.4,
+    tubuleDistance: Math.max(3.8 / Math.tan((25 * Math.PI) / 180), 7.4 / (Math.tan((25 * Math.PI) / 180) * aspect)),
     keepFullFraming: aspect < 1.2,
   });
 

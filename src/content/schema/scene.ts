@@ -41,6 +41,7 @@ export interface SceneDefinition {
   chipsStep?: number;
   summaryBadge?: SummaryBadge;
   summaryStep?: number;
+  toggle?: ModeToggle;
 }
 
 /** A labelled factor shown as a chip around a scene's 3D subject (design spec §6.7). */
@@ -62,4 +63,23 @@ export interface ChipDefinition {
 export interface SummaryBadge {
   label: string;
   state: FlagLevel;
+}
+
+/** One choice in a scene's mode toggle (e.g. a mechanism overlay). */
+export interface ModeOption {
+  id: string;
+  label: string;
+  /** Short qualifier shown beside the label, e.g. "emerging". */
+  badge?: string;
+  /** One line shown under the toggle while this option is active. */
+  hint?: string;
+}
+
+/** A segmented control that switches what a scene highlights, available from `fromStep` on. */
+export interface ModeToggle {
+  label: string;
+  /** Step `order` from which the control is shown. */
+  fromStep: number;
+  defaultId: string;
+  options: ModeOption[];
 }

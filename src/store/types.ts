@@ -11,6 +11,8 @@ export interface ScrollApi {
   scrollToPage: (page: number, smooth?: boolean) => void;
   /** Instantly scrolls to `progress` (0–1) within scene `page`. Used when something in the scene is dragged. */
   scrollToSceneProgress: (page: number, progress: number) => void;
+  /** Scrolls the experience by `deltaY` pixels, as if the wheel had turned over the scene itself. */
+  scrollBy: (deltaY: number) => void;
 }
 
 export interface AppState {
@@ -25,6 +27,8 @@ export interface AppState {
   labValues: Record<string, number>;
   sideNavExpanded: boolean;
   interventionState: Record<string, number | boolean>;
+  /** The chosen option of each scene's mode toggle, keyed by scene id. */
+  modeSelection: Record<string, string>;
   /** Which model tier to load: 'high' (default) or 'standard' (lighter files). */
   modelQuality: ModelQuality;
   reducedMotion: boolean;
@@ -46,6 +50,7 @@ export interface AppActions {
   toggleSideNav: () => void;
   setLabValue: (metricId: string, value: number) => void;
   setLabValues: (values: Record<string, number>) => void;
+  setMode: (sceneId: string, optionId: string) => void;
   setInterventionState: (id: string, value: number | boolean) => void;
   resetInterventions: () => void;
   setModelQuality: (quality: ModelQuality) => void;

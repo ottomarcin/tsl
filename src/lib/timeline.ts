@@ -1,4 +1,5 @@
 import { sampleCameraPath } from './cameraPath';
+import { KIDNEY_POS } from './cascade';
 import { CYTOLYSIS_CAMERA_PATH } from './cytolysis';
 
 /**
@@ -7,6 +8,7 @@ import { CYTOLYSIS_CAMERA_PATH } from './cytolysis';
  * ambient motion), so scenes hand over to each other with no cut: the same cells, one camera, one set of particles.
  */
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const smooth = (t: number) => t * t * (3 - 2 * t);
 
 /** Progress within scene `index` (0–1, clamped outside it). */
@@ -55,7 +57,54 @@ export function cloudTransition(g: number): number {
 
 /** Fade-in of the cascade's static props (heart, kidney, pool, labels) as the camera arrives. */
 export function cascadePresence(g: number): number {
-  return smooth(clamp01((g - (CLOUD_START + 0.04)) / 0.1));
+  const fadeIn = smooth(clamp01((g - (CLOUD_START + 0.04)) / 0.1));
+  // ...and out again while the camera dives into the kidney and the tubule takes its place.
+  const fadeOut = smooth(clamp01((g - CASCADE_FADE_START) / (CASCADE_FADE_END - CASCADE_FADE_START)));
+  return fadeIn * (1 - fadeOut);
+}
+
+// ---------------------------------------------------------------- the nephron (Scene 3)
+
+/**
+ * The dive into the kidney, over the end of Scene 2 (so `g = 3` already is Scene 3). First the camera pushes in on the
+ * kidney until it fills the frame; then the tubule appears inside it, small, and grows to full size while the camera
+ * settles back to frame it. The tubule is centred on the kidney, so it is literally "inside" it.
+ */
+export const TUBULE_SPAN = 0.2;
+export const TUBULE_START = 3 - TUBULE_SPAN;
+/** Fractions of the dive: the push-in ends and the tubule's growth begins. */
+const DIVE_IN = 0.55;
+const GROW_START = 0.4;
+
+/** World position of the kidney (and so of the tubule's centre). */
+export const SCENE3_OFFSET: [number, number, number] = [SCENE2_OFFSET[0] + KIDNEY_POS[0], SCENE2_OFFSET[1] + KIDNEY_POS[1], 0];
+/** The camera looks a little below the tubule's centre, which lifts it clear of the step caption in the lower left. */
+export const TUBULE_LOOK_DY = -0.5;
+/** Camera distance when the kidney fills the frame. */
+export const KIDNEY_ZOOM_DISTANCE = 6.2;
+/** Size of the tubule (relative to full) at the moment it appears inside the kidney. */
+export const TUBULE_BIRTH_SCALE = 0.14;
+
+const CASCADE_FADE_START = TUBULE_START + 0.5 * TUBULE_SPAN;
+const CASCADE_FADE_END = TUBULE_START + 0.82 * TUBULE_SPAN;
+
+function dive(g: number): number {
+  return clamp01((g - TUBULE_START) / TUBULE_SPAN);
+}
+
+/** Progress of the whole dive, 0 → 1. */
+export function tubuleTransition(g: number): number {
+  return smooth(dive(g));
+}
+
+/** How big the tubule is, as a fraction of its final size: tiny inside the kidney, then growing as the camera settles. */
+export function tubuleScale(g: number): number {
+  return lerp(TUBULE_BIRTH_SCALE, 1, smooth(clamp01((dive(g) - GROW_START) / (1 - GROW_START))));
+}
+
+/** Fade-in of the tubule's materials, once the kidney fills the frame. */
+export function tubulePresence(g: number): number {
+  return smooth(clamp01((dive(g) - 0.45) / 0.3));
 }
 
 // ---------------------------------------------------------------- camera
@@ -73,11 +122,11 @@ export interface CameraContext {
   cascadeDistance: number;
   /** Where the camera looks while framing the cascade, in world units. */
   cascadeTargetY: number;
+  /** Distance that frames the nephron tubule in Scene 3. */
+  tubuleDistance: number;
   /** Narrow or shifted layouts keep the full mass framing instead of pushing in. */
   keepFullFraming: boolean;
 }
-
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 /** Closest approach to the mass: where the Scene 1 path starts, and where Scene 0's slow push-in ends. */
 const PUSH_IN = CYTOLYSIS_CAMERA_PATH[0].distance;
@@ -110,9 +159,21 @@ export function cameraPoseAt(g: number, ctx: CameraContext): CameraPose {
   const end = cameraPoseAt(CLOUD_START, ctx);
   const k = cloudTransition(g);
   const ty = ctx.cascadeTargetY;
-  return {
+  const cascade: CameraPose = {
     position: [0, lerp(end.position[1], ty, k), lerp(end.position[2], ctx.cascadeDistance, k)],
     target: [0, lerp(end.target[1], ty, k), 0],
     fov: lerp(end.fov, 50, k),
   };
+  if (g <= TUBULE_START) return cascade;
+
+  // End of Scene 2: push in on the kidney until it fills the frame...
+  const kidneyY = SCENE3_OFFSET[1];
+  const u = dive(g);
+  const push = smooth(clamp01(u / DIVE_IN));
+  const settle = smooth(clamp01((u - DIVE_IN) / (1 - DIVE_IN)));
+  // ...then settle back to frame the tubule growing inside it, and creep slightly closer through Scene 3.
+  const creep = 1 - 0.08 * smooth(clamp01(g - 3));
+  const targetY = lerp(lerp(cascade.target[1], kidneyY, push), kidneyY + TUBULE_LOOK_DY, settle);
+  const distance = lerp(lerp(cascade.position[2], KIDNEY_ZOOM_DISTANCE, push), ctx.tubuleDistance * creep, settle);
+  return { position: [0, targetY, distance], target: [0, targetY, 0], fov: 50 };
 }

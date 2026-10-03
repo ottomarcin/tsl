@@ -16,7 +16,9 @@ import { ColorLegend } from './components/ColorLegend/ColorLegend';
 import { CascadeMinimap } from './components/CascadeMinimap/CascadeMinimap';
 import { CaptionBlock } from './components/CaptionBlock/CaptionBlock';
 import { ChipCluster, type ChipClusterPhase } from './components/ChipCluster/ChipCluster';
+import { ModeToggle } from './components/ModeToggle/ModeToggle';
 import { HighRiskBadge } from './components/HighRiskBadge/HighRiskBadge';
+import { forwardedWheelDelta } from './lib/wheelForward';
 import { labValuesAt, stepIndexFromProgress, timestampAt } from './lib/steps';
 import { FirstRunScrollHint } from './components/FirstRunScrollHint/FirstRunScrollHint';
 import styles from './App.module.css';
@@ -45,7 +47,8 @@ const LEGEND_ITEMS = [
  */
 function minimapHighlightFor(sceneIndex: number): string | 'full' | null {
   if (sceneIndex < 3) return null;
-  if (sceneIndex === 3) return 'purines';
+  // Scene 3 happens inside the kidney, where the streams converge.
+  if (sceneIndex === 3) return 'kidney';
   return 'full';
 }
 
@@ -60,6 +63,8 @@ export function App() {
   const toggleTheme = useAppStore((s) => s.toggleTheme);
   const modelQuality = useAppStore((s) => s.modelQuality);
   const toggleModelQuality = useAppStore((s) => s.toggleModelQuality);
+  const modeSelection = useAppStore((s) => s.modeSelection);
+  const setMode = useAppStore((s) => s.setMode);
   const { active: assetsLoading, progress: assetProgress } = useProgress();
   const sideNavExpanded = useAppStore((s) => s.sideNavExpanded);
   const toggleSideNav = useAppStore((s) => s.toggleSideNav);
@@ -168,6 +173,8 @@ export function App() {
       : scene?.chipsStep !== undefined && stepOrder >= scene.chipsStep
         ? 'shown'
         : 'hidden';
+  const toggle = scene?.toggle;
+  const toggleShown = !!toggle && !!activeStep && activeStep.order >= toggle.fromStep;
   const badgeVisible = scene?.summaryStep !== undefined && stepOrder >= scene.summaryStep;
   const minimapHighlight = minimapHighlightFor(sceneIndex);
 
@@ -195,7 +202,14 @@ export function App() {
         sheetOpen={navSheetOpen}
         onSheetOpenChange={setNavSheetOpen}
       />
-      <div className={styles.mainArea}>
+      <div
+        className={styles.mainArea}
+        onWheel={(e) => {
+          // A wheel turn over the interface should still scroll the story (see lib/wheelForward).
+          const delta = forwardedWheelDelta(e);
+          if (delta !== null) useAppStore.getState().scrollApi?.scrollBy(delta);
+        }}
+      >
         {isMobile && (
           <button type="button" className={styles.menuButton} aria-label="Open navigation" onClick={() => setNavSheetOpen(true)}>
             <Menu size={20} aria-hidden="true" />
@@ -207,7 +221,12 @@ export function App() {
         </div>
         {minimapHighlight && (
           <div className={styles.minimapFloating}>
-            <CascadeMinimap branches={tlsContent.cascade.branches} highlightedId={minimapHighlight} />
+            <CascadeMinimap
+              branches={tlsContent.cascade.branches}
+              highlightedId={minimapHighlight}
+              title="The cascade"
+              locationLabel={minimapHighlight === 'kidney' ? 'You are here: kidney' : minimapHighlight === 'full' ? 'The whole cascade' : undefined}
+            />
           </div>
         )}
         {sceneIndex === 0 && (
@@ -226,6 +245,11 @@ export function App() {
                 visible={badgeVisible}
                 reducedMotion={reducedMotion}
               />
+            </div>
+          )}
+          {toggleShown && toggle && scene && (
+            <div className={styles.modeToggleFloating}>
+              <ModeToggle toggle={toggle} value={modeSelection[scene.id] ?? toggle.defaultId} onChange={(id) => setMode(scene.id, id)} />
             </div>
           )}
           <div className={styles.bottomStack}>

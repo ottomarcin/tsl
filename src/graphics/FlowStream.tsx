@@ -17,6 +17,8 @@ export interface FlowStreamProps {
   getEmphasis: () => number;
   size?: number;
   blend?: 'additive' | 'normal';
+  /** 0–1 overall visibility, read every frame. */
+  getPresence?: () => number;
 }
 
 const tmp: Vec3 = [0, 0, 0];
@@ -26,7 +28,7 @@ const tmp: Vec3 = [0, 0, 0];
  * tube is clock-driven; which part of the tube is lit and how bright is driven by scene progress. Particles beyond the
  * stream's front are hidden and fade in over the last stretch before it.
  */
-export function FlowStream({ lut, count, traversal, color, getReveal, getEmphasis, size = 0.17, blend = 'additive' }: FlowStreamProps) {
+export function FlowStream({ lut, count, traversal, color, getReveal, getEmphasis, size = 0.17, blend = 'additive', getPresence }: FlowStreamProps) {
   const stride = blend === 'normal' ? 4 : 3;
   const rgb = useMemo(() => {
     const c = new Color(color);
@@ -43,7 +45,7 @@ export function FlowStream({ lut, count, traversal, color, getReveal, getEmphasi
 
   useFrame(({ clock }) => {
     const reveal = getReveal();
-    const emphasis = getEmphasis();
+    const emphasis = getEmphasis() * (getPresence ? getPresence() : 1);
     const pos = geometry.getAttribute('position') as BufferAttribute;
     const col = geometry.getAttribute('color') as BufferAttribute;
     const time = clock.elapsedTime;

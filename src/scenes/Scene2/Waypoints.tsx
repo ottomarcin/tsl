@@ -8,6 +8,7 @@ import { useModelClone } from './useModelClone';
 import type { ProgressProps } from './Organs';
 
 export interface WaypointsProps extends ProgressProps {
+  getPresence: () => number;
   waypoints: CascadeWaypoint[];
   /** Labels that name an enzyme (drawn as a ring, not a disc). */
   enzymeLabel: string;
@@ -22,6 +23,7 @@ function Marker({
   position,
   enzyme,
   getProgress,
+  getPresence,
   reducedMotion,
   moleculeColor,
 }: {
@@ -29,6 +31,7 @@ function Marker({
   position: Vec3;
   enzyme: boolean;
   getProgress: () => number;
+  getPresence: () => number;
   reducedMotion: boolean;
   moleculeColor: string;
 }) {
@@ -38,7 +41,7 @@ function Marker({
 
   useFrame(({ clock }, delta) => {
     // Appears as the purine stream's front reaches it.
-    const shown = Math.max(0, Math.min(1, (streamReveal('purines', getProgress()) - waypoint.t) / 0.08 + 0.001));
+    const shown = Math.max(0, Math.min(1, (streamReveal('purines', getProgress()) - waypoint.t) / 0.08 + 0.001)) * getPresence();
     label.current += (shown - label.current) * Math.min(1, delta * 8);
     if (!group.current) return;
     group.current.visible = shown > 0.01;
@@ -69,7 +72,7 @@ function Marker({
 }
 
 /** Hypoxanthine / xanthine / uric acid nodes and the two xanthine-oxidase rings along the purine tube. */
-export function Waypoints({ waypoints, enzymeLabel, moleculeColor, getProgress, reducedMotion }: WaypointsProps) {
+export function Waypoints({ waypoints, enzymeLabel, moleculeColor, getProgress, getPresence, reducedMotion }: WaypointsProps) {
   const lut = getTubeLuts().purines;
   const positions = useMemo(() => waypoints.map((w) => lutPoint(lut, w.t, [0, 0, 0] as Vec3)), [waypoints, lut]);
   return (
@@ -81,6 +84,7 @@ export function Waypoints({ waypoints, enzymeLabel, moleculeColor, getProgress, 
           position={positions[i]}
           enzyme={w.label === enzymeLabel}
           getProgress={getProgress}
+          getPresence={getPresence}
           reducedMotion={reducedMotion}
           moleculeColor={moleculeColor}
         />

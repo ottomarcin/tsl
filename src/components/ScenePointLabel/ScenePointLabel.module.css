@@ -12,6 +12,13 @@
   user-select: none;
 }
 
+.large {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid currentColor;
+  font-size: var(--font-size-mono);
+  line-height: var(--line-height-mono);
+}
+
 .subtle {
   background: transparent;
   font-size: 10px;
