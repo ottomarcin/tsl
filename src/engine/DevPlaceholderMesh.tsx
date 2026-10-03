@@ -4,7 +4,7 @@ import type { Mesh } from 'three';
 
 /**
  * Throwaway scaffolding — proves the scroll → 3D pipeline renders something.
- * Deleted once Scene 0's real placeholder-geometry content (Epic 3) exists.
+ * Stands in for scenes 1–5 until their content (Epics 4–8) exists; delete after Scene 5.
  */
 export function DevPlaceholderMesh() {
   const meshRef = useRef<Mesh>(null);

@@ -55,3 +55,19 @@
   color: var(--text-secondary);
   font-family: var(--font-sans);
 }
+
+.badgeSlot {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  transform: translate(-50%, -50%);
+  z-index: var(--z-scene-chrome);
+  pointer-events: none;
+}
+
+.captionFloating {
+  position: absolute;
+  left: 32px;
+  bottom: 72px;
+  z-index: var(--z-persistent-ui);
+}

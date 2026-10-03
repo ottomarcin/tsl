@@ -9,6 +9,10 @@ import { LabStrip } from './components/LabStrip/LabStrip';
 import { SideNav } from './components/SideNav/SideNav';
 import { ColorLegend } from './components/ColorLegend/ColorLegend';
 import { CascadeMinimap } from './components/CascadeMinimap/CascadeMinimap';
+import { CaptionBlock } from './components/CaptionBlock/CaptionBlock';
+import { ChipCluster, type ChipClusterPhase } from './components/ChipCluster/ChipCluster';
+import { HighRiskBadge } from './components/HighRiskBadge/HighRiskBadge';
+import { latestTimestamp, stepIndexFromProgress } from './lib/steps';
 import { FirstRunScrollHint } from './components/FirstRunScrollHint/FirstRunScrollHint';
 import styles from './App.module.css';
 
@@ -65,12 +69,16 @@ export function App() {
     setReducedMotion(reducedMotion);
   }, [reducedMotion, setReducedMotion]);
 
+  const sceneProgress = useAppStore((s) => s.sceneProgress);
+  const activeScene = route.kind === 'scene' ? tlsContent.scenes[route.index] : undefined;
+  const stepIndex = activeScene ? stepIndexFromProgress(sceneProgress, activeScene.steps.length) : 0;
+  const activeStep = activeScene?.steps[stepIndex];
+
+  // Lab values follow the active scroll step; metrics a step doesn't list keep their prior value.
   useEffect(() => {
-    const firstStepLabs = tlsContent.scenes[0]?.steps[0]?.labValues;
-    if (!firstStepLabs) return;
-    const values = Object.fromEntries(firstStepLabs.map((v) => [v.metricId, v.value]));
-    setLabValues(values);
-  }, [setLabValues]);
+    if (!activeStep?.labValues) return;
+    setLabValues(Object.fromEntries(activeStep.labValues.map((v) => [v.metricId, v.value])));
+  }, [activeStep, setLabValues]);
 
   if (!webglSupported) {
     return (
@@ -119,7 +127,16 @@ export function App() {
   }
 
   const sceneIndex = route.index;
-  const currentStep = tlsContent.scenes[sceneIndex]?.steps[0];
+  const scene = tlsContent.scenes[sceneIndex];
+  const timestamp = scene ? latestTimestamp(scene.steps, stepIndex) : undefined;
+  const stepOrder = activeStep?.order ?? 0;
+  const chipPhase: ChipClusterPhase =
+    scene?.summaryStep !== undefined && stepOrder >= scene.summaryStep
+      ? 'merged'
+      : scene?.chipsStep !== undefined && stepOrder >= scene.chipsStep
+        ? 'shown'
+        : 'hidden';
+  const badgeVisible = scene?.summaryStep !== undefined && stepOrder >= scene.summaryStep;
   const minimapHighlight = minimapHighlightFor(sceneIndex);
 
   return (
@@ -149,6 +166,22 @@ export function App() {
         )}
         <div className={styles.canvasArea}>
           <ScrollCanvas />
+          {scene?.chips && <ChipCluster chips={scene.chips} phase={chipPhase} reducedMotion={reducedMotion} />}
+          {scene?.summaryBadge && (
+            <div className={styles.badgeSlot}>
+              <HighRiskBadge
+                label={scene.summaryBadge.label}
+                state={scene.summaryBadge.state}
+                visible={badgeVisible}
+                reducedMotion={reducedMotion}
+              />
+            </div>
+          )}
+          {scene && activeStep && (
+            <div className={styles.captionFloating}>
+              <CaptionBlock key={activeStep.id} sceneTitle={scene.title} caption={activeStep.caption} learnMore={activeStep.learnMore} />
+            </div>
+          )}
         </div>
         <div className={styles.colorLegendFloating}>
           <ColorLegend items={LEGEND_ITEMS} expanded={legendExpanded} onToggleExpanded={() => setLegendExpanded((e) => !e)} />
@@ -156,7 +189,7 @@ export function App() {
         <LabStrip
           metrics={tlsContent.metrics}
           values={labValues}
-          timestamp={currentStep?.timestamp}
+          timestamp={timestamp}
           currentStage={sceneIndex}
           totalStages={tlsContent.scenes.length}
           stageLabels={STAGE_LABELS}

@@ -46,4 +46,17 @@ export const scene0: SceneDefinition = {
       },
     },
   ],
+  chipsStep: 2,
+  summaryStep: 3,
+  summaryBadge: { label: 'HIGH RISK', state: 'red' },
+  // Seven risk factors, asset spec §2.2 table, valued for the scene's example patient (Burkitt lymphoma).
+  chips: [
+    { id: 'tumor-burden', label: 'Tumor burden', valueText: '85%', state: 'amber', active: true, fill: 0.85, reference: 'Amber above 60% of the reference burden scale.' },
+    { id: 'ldh', label: 'LDH', valueText: '2.3× ULN', state: 'amber', active: true, fill: 0.46, reference: 'Amber above 2.0× ULN, red above 3.0× ULN.' },
+    { id: 'ckd', label: 'Pre-existing CKD', valueText: 'No', state: 'normal', active: false, reference: 'Red when present: upgrades risk one tier.' },
+    { id: 'hydration', label: 'Hydration', valueText: 'Adequate', state: 'normal', active: false, reference: 'Amber when poor: volume depletion upgrades risk one tier.' },
+    { id: 'bulky', label: 'Bulky disease', valueText: '>10 cm', state: 'amber', active: true, reference: 'Amber when any mass exceeds 10 cm.' },
+    { id: 'high-risk-dx', label: 'High-risk Dx', valueText: 'Burkitt lymphoma', state: 'red', active: true, reference: 'Red for high-risk malignancies (Burkitt, lymphoblastic, B-ALL).' },
+    { id: 'nephrotoxins', label: 'Nephrotoxins', valueText: '–', state: 'normal', active: false, reference: 'Amber with recent contrast or other nephrotoxic exposure.' },
+  ],
 };

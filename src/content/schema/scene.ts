@@ -1,3 +1,5 @@
+import type { FlagLevel } from './metric';
+
 export interface Citation {
   id: string;
   text: string;
@@ -34,4 +36,30 @@ export interface SceneDefinition {
   index: number;
   title: string;
   steps: ScrollStep[];
+  /** Chips that stagger in at `chipsStep` and merge into `summaryBadge` at `summaryStep` (step `order` values). */
+  chips?: ChipDefinition[];
+  chipsStep?: number;
+  summaryBadge?: SummaryBadge;
+  summaryStep?: number;
+}
+
+/** A labelled factor shown as a chip around a scene's 3D subject (design spec §6.7). */
+export interface ChipDefinition {
+  id: string;
+  label: string;
+  /** Display string, e.g. "2.3× ULN". */
+  valueText: string;
+  state: FlagLevel;
+  /** False renders the chip dimmed (factor not present for this case). */
+  active: boolean;
+  /** 0–1; present only for quantitative chips. */
+  fill?: number;
+  /** Shown in the chip's tooltip. */
+  reference: string;
+}
+
+/** The single badge a scene's chips consolidate into. */
+export interface SummaryBadge {
+  label: string;
+  state: FlagLevel;
 }
