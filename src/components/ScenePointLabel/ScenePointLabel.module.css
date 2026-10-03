@@ -1,0 +1,37 @@
+.label {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-input);
+  background: var(--bg-overlay);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-mono-sm);
+  line-height: var(--line-height-mono-sm);
+  white-space: nowrap;
+  color: var(--text-secondary);
+  transition: opacity 320ms cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.subtle {
+  background: transparent;
+  font-size: 10px;
+}
+
+/* The 3D scene shrinks to fit narrow screens; keep labels in proportion so they don't cover what they name. */
+@media (max-width: 767px) {
+  .label {
+    padding: 0 var(--space-1);
+    font-size: 9px;
+    line-height: 12px;
+  }
+
+  .subtle {
+    font-size: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .label {
+    transition: none;
+  }
+}

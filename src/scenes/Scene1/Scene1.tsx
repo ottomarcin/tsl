@@ -20,6 +20,7 @@ import {
 import { DragOverride } from '../../lib/dragOverride';
 import { stepIndexFromProgress } from '../../lib/steps';
 import { useAppStore } from '../../store/useAppStore';
+import { moleculeColor } from '../shared/molecules';
 import { getTumorMassLayout } from '../shared/tumorMass';
 import { useSceneFraming } from '../shared/useSceneFraming';
 import { ModelBoundary } from '../../assets/ModelBoundary';
@@ -31,12 +32,7 @@ export interface Scene1Props {
   viewShift?: number;
 }
 
-/** Colours from the asset spec (`mol-K`, `mol-PO4`, `mol-purines`); the light-theme token values on a pale canvas. */
-const SYSTEMS: { id: ParticleSystemId; color: string; colorLight: string }[] = [
-  { id: 'K', color: '#E8A23D', colorLight: '#B8771E' },
-  { id: 'PO4', color: '#4A9FD8', colorLight: '#2A6A9D' },
-  { id: 'purines', color: '#9B6BD4', colorLight: '#6C40A8' },
-];
+const SYSTEMS: { id: ParticleSystemId }[] = [{ id: 'K' }, { id: 'PO4' }, { id: 'purines' }];
 
 const STEP_COUNT = 3;
 
@@ -134,7 +130,7 @@ export function Scene1({ reducedMotion = false, viewShift = 0 }: Scene1Props) {
         <ParticleBurst
           key={sys.id}
           count={cells.length * PARTICLES.perCellPerSystem}
-          color={light ? sys.colorLight : sys.color}
+          color={moleculeColor(sys.id, theme)}
           getProgress={getProgress}
           blend={light ? 'normal' : 'additive'}
           fill={(positions, colors, rgb, progress, stride) =>

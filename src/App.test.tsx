@@ -188,6 +188,69 @@ describe('App', () => {
     });
   });
 
+  describe('Scene 2 step bindings', () => {
+    async function openScene2AtProgress(progress: number) {
+      window.history.replaceState(null, '', '/scene/2');
+      const { App, useAppStore } = await setUpApp(true);
+      const utils = render(<App />);
+      await act(async () => {
+        useAppStore.getState().setSceneProgress(progress);
+      });
+      return { ...utils, useAppStore };
+    }
+    const steps = tlsContent.scenes[2].steps;
+
+    it('step 2.1: potassium climbs to 5.8 and the earlier scenes\' labs carry over', async () => {
+      const { useAppStore } = await openScene2AtProgress(0.1);
+      expect(screen.getByText(steps[0].caption)).toBeInTheDocument();
+      expect(useAppStore.getState().labValues).toMatchObject({ K: 5.8, PO4: 5.5, UA: 7.8, Ca: 9.4 });
+    });
+
+    it('step 2.2: phosphate rises and calcium falls (the inversion)', async () => {
+      const { useAppStore } = await openScene2AtProgress(0.35);
+      expect(screen.getByText(steps[1].caption)).toBeInTheDocument();
+      expect(useAppStore.getState().labValues).toMatchObject({ PO4: 6.2, Ca: 7.8, K: 5.8 });
+    });
+
+    it('step 2.3: uric acid reaches 9.5', async () => {
+      const { useAppStore } = await openScene2AtProgress(0.6);
+      expect(screen.getByText(steps[2].caption)).toBeInTheDocument();
+      expect(useAppStore.getState().labValues.UA).toBe(9.5);
+    });
+
+    it('step 2.4: all three are flagged at T+24h', async () => {
+      const { useAppStore } = await openScene2AtProgress(0.9);
+      expect(screen.getByText(steps[3].caption)).toBeInTheDocument();
+      expect(useAppStore.getState().labValues).toMatchObject({ Ca: 7.6, PO4: 6.5, UA: 10.2 });
+      expect(screen.getAllByText('T+24h').length).toBeGreaterThan(0);
+    });
+
+    it('keeps the T+12h timestamp from Scene 1 until step 2.4 sets a new one', async () => {
+      await openScene2AtProgress(0.1);
+      expect(screen.getAllByText('T+12h').length).toBeGreaterThan(0);
+    });
+
+    it('does not show the cascade minimap yet (it starts in Scene 3)', async () => {
+      await openScene2AtProgress(0.9);
+      expect(screen.queryByRole('img', { name: 'Cascade progress minimap' })).not.toBeInTheDocument();
+    });
+
+    it('states the 70 mg²/dL² threshold in the step 2.2 Learn more panel', async () => {
+      await openScene2AtProgress(0.35);
+      await userEvent.click(screen.getByRole('button', { name: /learn more/i }));
+      expect(screen.getByText(/70 mg²\/dL² \(5\.6 mmol²\/L²\)/)).toBeVisible();
+    });
+
+    it('has no accessibility violations at any step', async () => {
+      for (const p of [0.1, 0.35, 0.6, 0.9]) {
+        const { container, unmount } = await openScene2AtProgress(p);
+        expect(await axe(container)).toHaveNoViolations();
+        unmount();
+        vi.resetModules();
+      }
+    });
+  });
+
   describe('Scene 1 step bindings', () => {
     async function openScene1AtProgress(progress: number) {
       window.history.replaceState(null, '', '/scene/1');

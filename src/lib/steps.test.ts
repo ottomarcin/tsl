@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { labValuesAt, latestTimestamp, stepIndexFromProgress } from './steps';
+import { labValuesAt, latestTimestamp, stepIndexFromProgress, timestampAt } from './steps';
 
 describe('stepIndexFromProgress', () => {
   it('splits progress into equal bands', () => {
@@ -58,5 +58,24 @@ describe('labValuesAt', () => {
   });
   it('tolerates out-of-range indices', () => {
     expect(labValuesAt(scenes, 9, 9)).toEqual({ K: 5.5, Ca: 9.4, PO4: 5.5 });
+  });
+});
+
+describe('timestampAt', () => {
+  const scenes = [
+    { id: 's0', index: 0, title: '', steps: [{ id: 'a', order: 1, caption: '', timestamp: 'T+0h' }, { id: 'b', order: 2, caption: '' }] },
+    { id: 's1', index: 1, title: '', steps: [{ id: 'c', order: 1, caption: '' }, { id: 'd', order: 2, caption: '', timestamp: 'T+24h' }] },
+  ];
+  it('carries the previous scene timestamp into steps that set none', () => {
+    expect(timestampAt(scenes, 1, 0)).toBe('T+0h');
+  });
+  it('switches when a step sets a new one', () => {
+    expect(timestampAt(scenes, 1, 1)).toBe('T+24h');
+  });
+  it('does not look ahead', () => {
+    expect(timestampAt(scenes, 0, 1)).toBe('T+0h');
+  });
+  it('is undefined when nothing has set one', () => {
+    expect(timestampAt([{ id: 'x', index: 0, title: '', steps: [{ id: 'y', order: 1, caption: '' }] }], 0, 0)).toBeUndefined();
   });
 });

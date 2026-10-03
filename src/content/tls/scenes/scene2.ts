@@ -1,5 +1,6 @@
 import type { SceneDefinition } from '../../schema';
 import { cite } from '../citations';
+import { caPo4ThresholdText } from '../thresholds';
 
 // Transcribed verbatim from tls_design_specification.md §5.4.
 export const scene2: SceneDefinition = {
@@ -28,7 +29,7 @@ export const scene2: SceneDefinition = {
       ],
       learnMore: {
         heading: 'Hypocalcemia is secondary',
-        body: 'This is the most commonly misunderstood mechanism in TLS. Calcium does not fall because of any primary loss. It falls because phosphate, released in massive quantities, chelates serum calcium into insoluble calcium-phosphate complexes. When the Ca × PO₄ product exceeds approximately 70 mg²/dL² (5.6 mmol²/L²), precipitation accelerates. The complexes deposit in tubules and soft tissue. Treating the calcium directly with IV calcium is dangerous in this setting — it accelerates precipitation and worsens tubular injury. Calcium is reserved for symptomatic hypocalcemia (tetany, seizures, severe ECG changes) where the risk of arrhythmia outweighs the precipitation risk.',
+        body: `This is the most commonly misunderstood mechanism in TLS. Calcium does not fall because of any primary loss. It falls because phosphate, released in massive quantities, chelates serum calcium into insoluble calcium-phosphate complexes. When the Ca × PO₄ product exceeds approximately ${caPo4ThresholdText()}, precipitation accelerates. The complexes deposit in tubules and soft tissue. Treating the calcium directly with IV calcium is dangerous in this setting — it accelerates precipitation and worsens tubular injury. Calcium is reserved for symptomatic hypocalcemia (tetany, seizures, severe ECG changes) where the risk of arrhythmia outweighs the precipitation risk.`,
         citations: cite('1', '14', '11'),
       },
     },

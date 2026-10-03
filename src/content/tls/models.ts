@@ -22,6 +22,41 @@ export const tlsModels: ModelManifest = {
       scenes: [0, 1],
       usages: ['instanced'],
     },
+    heartIcon: {
+      standard: 's2_heart_icon.glb',
+      high: 'hd/s2_heart_icon.glb',
+      scenes: [2],
+      usages: ['single'],
+    },
+    kidney: {
+      standard: 's2_kidney_silhouette.glb',
+      high: 'hd/s2_kidney_silhouette.glb',
+      scenes: [2],
+      usages: ['single'],
+    },
+    waypoint: {
+      standard: 's2_waypoint_node.glb',
+      high: 'hd/s2_waypoint_node.glb',
+      scenes: [2],
+      usages: ['single'],
+    },
+    xoEnzyme: {
+      standard: 's2_XO_enzyme.glb',
+      high: 'hd/s2_XO_enzyme.glb',
+      scenes: [2],
+      usages: ['single'],
+    },
+    // 15-20 copies each, tiny: the light files are plenty on every tier.
+    crystalCaPhos: {
+      standard: 's2_crystal_caphos.glb',
+      scenes: [2],
+      usages: ['instanced'],
+    },
+    crystalUricAcid: {
+      standard: 's2_crystal_uricacid.glb',
+      scenes: [2],
+      usages: ['instanced'],
+    },
     cellRupture: {
       standard: 's1_cell_rupture.glb',
       high: 'hd/s1_cell_rupture.glb',

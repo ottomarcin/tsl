@@ -30,3 +30,14 @@ export function labValuesAt(scenes: SceneDefinition[], sceneIndex: number, stepI
   }
   return values;
 }
+
+/** The timestamp in force at a point in the story: the latest one set at or before it, across scenes. */
+export function timestampAt(scenes: SceneDefinition[], sceneIndex: number, stepIndex: number): string | undefined {
+  let stamp: string | undefined;
+  for (let s = 0; s <= sceneIndex && s < scenes.length; s++) {
+    const steps = scenes[s].steps;
+    const last = s === sceneIndex ? stepIndex : steps.length - 1;
+    for (let i = 0; i <= last && i < steps.length; i++) stamp = steps[i].timestamp ?? stamp;
+  }
+  return stamp;
+}

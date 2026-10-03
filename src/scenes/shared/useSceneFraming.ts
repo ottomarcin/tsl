@@ -10,11 +10,22 @@ export function cameraDistanceFor(aspect: number): number {
   return Math.max(14, FRAME_RADIUS / (FOV_HALF_TAN * Math.min(1, aspect)));
 }
 
+export interface SceneExtent {
+  /** Half the width and height of the region that must stay in view, in world units. */
+  halfWidth: number;
+  halfHeight: number;
+}
+
+/** Camera distance that fits a rectangular region of the z = 0 plane in both axes. */
+export function cameraDistanceForExtent(aspect: number, { halfWidth, halfHeight }: SceneExtent): number {
+  return Math.max(halfHeight / FOV_HALF_TAN, halfWidth / (FOV_HALF_TAN * Math.max(aspect, 0.1)));
+}
+
 /**
  * Applies the screen-shift for layouts with a left caption column and returns the base camera distance for the
  * current aspect ratio. Resets the view offset on unmount so the next scene starts clean.
  */
-export function useSceneFraming(viewShift: number): number {
+export function useSceneFraming(viewShift: number, extent?: SceneExtent): number {
   const camera = useThree((s) => s.camera);
   const width = useThree((s) => s.size.width);
   const height = useThree((s) => s.size.height);
@@ -30,5 +41,5 @@ export function useSceneFraming(viewShift: number): number {
     };
   }, [camera, width, height, viewShift]);
 
-  return cameraDistanceFor(aspect);
+  return extent ? cameraDistanceForExtent(aspect, extent) : cameraDistanceFor(aspect);
 }

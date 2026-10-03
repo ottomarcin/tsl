@@ -17,7 +17,7 @@ import { CascadeMinimap } from './components/CascadeMinimap/CascadeMinimap';
 import { CaptionBlock } from './components/CaptionBlock/CaptionBlock';
 import { ChipCluster, type ChipClusterPhase } from './components/ChipCluster/ChipCluster';
 import { HighRiskBadge } from './components/HighRiskBadge/HighRiskBadge';
-import { labValuesAt, latestTimestamp, stepIndexFromProgress } from './lib/steps';
+import { labValuesAt, stepIndexFromProgress, timestampAt } from './lib/steps';
 import { FirstRunScrollHint } from './components/FirstRunScrollHint/FirstRunScrollHint';
 import styles from './App.module.css';
 
@@ -160,7 +160,7 @@ export function App() {
 
   const sceneIndex = route.index;
   const scene = tlsContent.scenes[sceneIndex];
-  const timestamp = scene ? latestTimestamp(scene.steps, stepIndex) : undefined;
+  const timestamp = scene ? timestampAt(tlsContent.scenes, sceneIndex, stepIndex) : undefined;
   const stepOrder = activeStep?.order ?? 0;
   const chipPhase: ChipClusterPhase =
     scene?.summaryStep !== undefined && stepOrder >= scene.summaryStep

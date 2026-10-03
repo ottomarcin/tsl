@@ -4,6 +4,7 @@ import { ScrollProgressSync } from './ScrollProgressSync';
 import { DevPlaceholderMesh } from './DevPlaceholderMesh';
 import { Scene0 } from '../scenes/Scene0/Scene0';
 import { Scene1 } from '../scenes/Scene1/Scene1';
+import { Scene2 } from '../scenes/Scene2/Scene2';
 import { useAppStore } from '../store/useAppStore';
 import { SCENE_COUNT } from '../store/types';
 
@@ -18,7 +19,8 @@ function SceneContent({ viewShift }: { viewShift: number }) {
   const reducedMotion = useAppStore((s) => s.reducedMotion);
   if (route.kind === 'scene' && route.index === 0) return <Scene0 reducedMotion={reducedMotion} viewShift={viewShift} />;
   if (route.kind === 'scene' && route.index === 1) return <Scene1 reducedMotion={reducedMotion} viewShift={viewShift} />;
-  // Scenes 2–5 have no 3D content yet (Epics 5–8).
+  if (route.kind === 'scene' && route.index === 2) return <Scene2 reducedMotion={reducedMotion} viewShift={viewShift} />;
+  // Scenes 3–5 have no 3D content yet (Epics 6–8).
   return <DevPlaceholderMesh />;
 }
 

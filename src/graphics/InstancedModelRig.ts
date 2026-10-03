@@ -10,10 +10,8 @@ import {
   type Mesh,
 } from 'three';
 import type { ModelPart } from '../assets/collectMeshes';
+import { SELF_LUMINANCE, liftEmissive } from './emissive';
 import { BURST_AMOUNT_ATTRIBUTE, BURST_MASK_ATTRIBUTE, isStandardMaterial, patchBurstMaterial } from './burstMaterial';
-
-/** Asset spec §1.5: cells carry a small emissive component (~0.05) so they look slightly self-luminous. */
-export const SELF_LUMINANCE = 0.05;
 
 export interface RigOptions {
   /** Part names (prefix match), innermost first. Unlisted parts draw first. */
@@ -84,8 +82,7 @@ export class InstancedModelRig {
         clone.forceSinglePass = true;
       }
       if (isStandardMaterial(clone)) {
-        const peak = Math.max(clone.emissive.r, clone.emissive.g, clone.emissive.b) * clone.emissiveIntensity;
-        if (this.selfLuminance > 0 && peak > 0 && peak < this.selfLuminance) clone.emissiveIntensity *= this.selfLuminance / peak;
+        liftEmissive(clone, this.selfLuminance);
         if (srcBurst) patchBurstMaterial(clone);
       }
       return clone;
