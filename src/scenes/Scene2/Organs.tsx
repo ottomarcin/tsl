@@ -1,10 +1,11 @@
 import { useFrame } from '@react-three/fiber';
-import { Color, type Group, type MeshStandardMaterial } from 'three';
+import { Color, type Group } from 'three';
 import { ScenePointLabel } from '../../components/ScenePointLabel/ScenePointLabel';
 import { applyGlow, captureEmissive } from '../../graphics/emissive';
 import { HEART_POS, KIDNEY_POS, heartArrival, kidneyLoad, type Vec3 } from '../../lib/cascade';
+import { useFade } from '../shared/useFade';
 import { useModelClone } from './useModelClone';
-import { useMemo, useRef, type RefObject } from 'react';
+import { useRef } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 
 export interface ProgressProps {
@@ -74,22 +75,6 @@ export function Kidney({ getProgress, getPresence, label }: Pick<ProgressProps, 
       <ScenePointLabel position={[KIDNEY_POS[0] + 2.4, KIDNEY_POS[1] + 0.4, 0]} text={label} color="var(--text-secondary)" getOpacity={getPresence} />
     </>
   );
-}
-
-/**
- * Fades a prop in with the scenery: hides the group at zero and scales the materials' opacity otherwise. Returns a
- * function to call every frame. `minOpacity` raises the resting opacity (the kidney on the pale canvas).
- */
-function useFade(materials: MeshStandardMaterial[], group: RefObject<Group | null>, getPresence: () => number, minOpacity = 0) {
-  const rest = useMemo(() => materials.map((m) => Math.max(m.opacity, minOpacity)), [materials, minOpacity]);
-  return () => {
-    const presence = getPresence();
-    if (group.current) group.current.visible = presence > 0.01;
-    materials.forEach((m, i) => {
-      m.transparent = true;
-      m.opacity = rest[i] * presence;
-    });
-  };
 }
 
 export type { Vec3 };

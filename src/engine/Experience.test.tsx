@@ -13,7 +13,10 @@ vi.mock('../scenes/Scene3/Scene3', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../scenes/Scene3/Scene3')>();
   return { ...actual, Scene3: () => <group name="nephron" /> };
 });
-vi.mock('./DevPlaceholderMesh', () => ({ DevPlaceholderMesh: () => <group name="placeholder" /> }));
+vi.mock('../scenes/Scene4/Scene4', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../scenes/Scene4/Scene4')>();
+  return { ...actual, Scene4: () => <group name="systemic" /> };
+});
 
 const { Experience } = await import('./Experience');
 
@@ -34,7 +37,7 @@ const mount = (props: { viewShift?: number } = {}) =>
       <Experience {...props} />
     </>,
   );
-const names = (r: Awaited<ReturnType<typeof ReactThreeTestRenderer.create>>) => r.scene.children.map((c) => c.instance.name || 'anchor').filter((n) => n !== 'anchor' || true);
+const names = (r: Awaited<ReturnType<typeof ReactThreeTestRenderer.create>>) => r.scene.children.map((c) => c.instance.name).filter(Boolean);
 const setRoute = (index: number) => useAppStore.setState({ route: { kind: 'scene', index } });
 
 describe('Experience: what is mounted', () => {
@@ -42,9 +45,9 @@ describe('Experience: what is mounted', () => {
     [0, ['tumor']],
     [1, ['tumor', 'cascade']],
     [2, ['tumor', 'cascade', 'nephron']],
-    [3, ['tumor', 'cascade', 'nephron']],
-    [4, ['anchor']],
-    [5, ['anchor']],
+    [3, ['tumor', 'cascade', 'nephron', 'systemic']],
+    [4, ['systemic']],
+    [5, ['systemic']],
   ])('scene %i', async (index, expected) => {
     setRoute(index);
     const renderer = await mount();
@@ -72,6 +75,8 @@ describe('Experience: the camera', () => {
     cascadeDistance: Math.max(6.1 / Math.tan((25 * Math.PI) / 180), 7.2 / (Math.tan((25 * Math.PI) / 180) * aspect)),
     cascadeTargetY: -5.4,
     tubuleDistance: Math.max(3.8 / Math.tan((25 * Math.PI) / 180), 7.4 / (Math.tan((25 * Math.PI) / 180) * aspect)),
+    systemicDistance: Math.max(5.6 / Math.tan((25 * Math.PI) / 180), 7.4 / (Math.tan((25 * Math.PI) / 180) * aspect)),
+    systemicTargetY: -9.75 - 0.9,
     keepFullFraming: aspect < 1.2,
   });
 

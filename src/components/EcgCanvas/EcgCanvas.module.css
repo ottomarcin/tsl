@@ -1,0 +1,12 @@
+.frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--border-strong);
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

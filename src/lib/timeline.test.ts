@@ -9,6 +9,11 @@ import {
   tubuleScale,
   tubuleTransition,
   KIDNEY_ZOOM_DISTANCE,
+  SCENE4_OFFSET,
+  SYSTEMIC_SPAN,
+  SYSTEMIC_START,
+  systemicPresence,
+  systemicTransition,
   TUBULE_BIRTH_SCALE,
   MASS_TURN,
   cameraPoseAt,
@@ -20,7 +25,7 @@ import {
   type CameraContext,
 } from './timeline';
 
-const ctx: CameraContext = { massDistance: 14, cascadeDistance: 12, cascadeTargetY: -5.4, tubuleDistance: 13, keepFullFraming: false };
+const ctx: CameraContext = { massDistance: 14, cascadeDistance: 12, cascadeTargetY: -5.4, tubuleDistance: 13, systemicDistance: 15, systemicTargetY: -10.6, keepFullFraming: false };
 
 describe('localProgress', () => {
   it('is 0–1 inside a scene and clamped outside it', () => {
@@ -175,6 +180,39 @@ describe('nephron hand-over: dive into the kidney, then the tubule', () => {
     expect(tubuleTransition(3)).toBe(1);
     expect(cameraPoseAt(3.6, ctx).position[2]).toBeLessThan(cameraPoseAt(3, ctx).position[2]);
     expect(cameraPoseAt(4, ctx).position[2]).toBeCloseTo(cameraPoseAt(5, ctx).position[2], 9);
+  });
+});
+
+describe('systemic hand-over: the tubule gives way to the heart and hand', () => {
+  it('Scene 4 is built around the same point as the tubule, so the hand-over is a cross-fade in place', () => {
+    expect(SCENE4_OFFSET).toEqual(SCENE3_OFFSET);
+  });
+  it('every scene start looks like its scene: at g = 4 the camera is on the panels', () => {
+    const p = cameraPoseAt(4, ctx);
+    expect(p.position[1]).toBeCloseTo(-10.6, 6);
+    expect(p.target[1]).toBeCloseTo(-10.6, 6);
+    expect(p.position[2]).toBeCloseTo(15, 6);
+    expect(cameraPoseAt(5, ctx)).toEqual(cameraPoseAt(4, ctx));
+  });
+  it('moves only over the last stretch of Scene 3, and without a jump at either end', () => {
+    expect(SYSTEMIC_START).toBeCloseTo(4 - SYSTEMIC_SPAN, 9);
+    expect(cameraPoseAt(3.5, ctx).position[2]).toBeCloseTo(cameraPoseAt(3.5, ctx).position[2], 9);
+    const a = cameraPoseAt(SYSTEMIC_START - 1e-6, ctx);
+    const b = cameraPoseAt(SYSTEMIC_START + 1e-6, ctx);
+    expect(b.position[2]).toBeCloseTo(a.position[2], 3);
+    expect(b.target[1]).toBeCloseTo(a.target[1], 3);
+  });
+  it('the panels fade in as the tubule fades out, with an overlap', () => {
+    expect(systemicTransition(SYSTEMIC_START)).toBe(0);
+    expect(systemicTransition(4)).toBe(1);
+    expect(systemicPresence(3.5)).toBe(0);
+    expect(systemicPresence(4)).toBe(1);
+    expect(tubulePresence(3.5)).toBe(1);
+    expect(tubulePresence(4)).toBe(0);
+    const mid = SYSTEMIC_START + 0.08;
+    expect(tubulePresence(mid)).toBeGreaterThan(0);
+    expect(tubulePresence(mid)).toBeLessThan(1);
+    expect(systemicPresence(mid)).toBeGreaterThan(0);
   });
 });
 

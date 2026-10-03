@@ -52,6 +52,12 @@ const REGISTRY: Record<string, Citation> = {
     text: 'Cairo MS, Coiffier B, Reiter A, Younes A (TLS Expert Panel). Recommendations for the evaluation of risk and prophylaxis of tumour lysis syndrome in adults and children with malignant diseases: an expert TLS panel consensus. Br J Haematol 2010;149(4):578–586.',
   },
   '18': { id: '18', text: 'Mattu A, Brady WJ, Robinson DA. ECG Diagnosis: Hyperkalemia. Perm J 2014;18(2):e120.' },
+  // Added after the scenario script was written, to source the caveat that the classical ECG sequence is unreliable.
+  '19': {
+    id: '19',
+    text: 'Montague BT, Ouellette JR, Buller GK. Retrospective review of the frequency of ECG changes in hyperkalemia. Clin J Am Soc Nephrol 2008;3(2):324–330.',
+    url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC2390954',
+  },
 };
 
 export function cite(...ids: string[]): Citation[] {

@@ -77,6 +77,24 @@ export const tlsModels: ModelManifest = {
       scenes: [3],
       usages: ['single'],
     },
+    heartFull: {
+      standard: 's4_heart_full.glb',
+      high: 'hd/s4_heart_full.glb',
+      scenes: [3, 4],
+      usages: ['single'],
+    },
+    hand: {
+      standard: 's4_hand_forearm.glb',
+      high: 'hd/s4_hand_forearm.glb',
+      scenes: [3, 4],
+      usages: ['single'],
+    },
+    lysisOrigin: {
+      standard: 's4_lysis_origin.glb',
+      high: 'hd/s4_lysis_origin.glb',
+      scenes: [3, 4],
+      usages: ['single'],
+    },
     cellRupture: {
       standard: 's1_cell_rupture.glb',
       high: 'hd/s1_cell_rupture.glb',

@@ -224,6 +224,68 @@ describe('App', () => {
     });
   });
 
+  describe('Scene 4 step bindings', () => {
+    async function openScene4AtProgress(progress: number) {
+      window.history.replaceState(null, '', '/scene/4');
+      const { App, useAppStore } = await setUpApp(true);
+      const utils = render(<App />);
+      await act(async () => {
+        useAppStore.getState().setSceneProgress(progress);
+      });
+      return { ...utils, useAppStore };
+    }
+    const steps = tlsContent.scenes[4].steps;
+
+    it('step 4.1: every lab is flagged at T+48h', async () => {
+      const { useAppStore } = await openScene4AtProgress(0.1);
+      inCaption().getByText(steps[0].caption);
+      expect(useAppStore.getState().labValues).toMatchObject({ K: 6.3, Ca: 7.0, PO4: 7.8, UA: 11.4, Cr: 3.1 });
+      expect(screen.getAllByText('T+48h').length).toBeGreaterThan(0);
+    });
+
+    it('steps 4.2 and 4.3 leave the lab strip unchanged (the panels carry their own severity)', async () => {
+      const first = await openScene4AtProgress(0.1);
+      const before = { ...first.useAppStore.getState().labValues };
+      await act(async () => {
+        first.useAppStore.getState().setSceneProgress(0.4);
+      });
+      expect(first.useAppStore.getState().labValues).toEqual(before);
+      await act(async () => {
+        first.useAppStore.getState().setSceneProgress(0.6);
+      });
+      expect(first.useAppStore.getState().labValues).toEqual(before);
+      inCaption().getByText(steps[2].caption);
+    });
+
+    it('step 4.4 closes with the combined-risk Learn more', async () => {
+      await openScene4AtProgress(0.9);
+      inCaption().getByText(steps[3].caption);
+      await userEvent.click(screen.getByRole('button', { name: /learn more/i }));
+      expect(screen.getByText(steps[3].learnMore!.heading)).toBeVisible();
+    });
+
+    it('keeps the minimap with the potassium and calcium paths lit and says where we are', async () => {
+      await openScene4AtProgress(0.1);
+      expect(screen.getByRole('img', { name: /Cascade progress minimap\. You are here: K⁺ and Ca²⁺ effects/ })).toBeInTheDocument();
+    });
+
+    it('has the four steps in the side menu and no mechanism toggle', async () => {
+      await openScene4AtProgress(0.1);
+      const nav = screen.getByRole('navigation', { name: 'Scene navigation' });
+      expect(within(nav).getAllByRole('button', { name: /^4\.\d / })).toHaveLength(4);
+      expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+    });
+
+    it('has no accessibility violations at any step', async () => {
+      for (const p of [0.1, 0.4, 0.6, 0.9]) {
+        const { container, unmount } = await openScene4AtProgress(p);
+        expect(await axe(container)).toHaveNoViolations();
+        unmount();
+        vi.resetModules();
+      }
+    });
+  });
+
   describe('Scene 3 step bindings and the mechanism toggle', () => {
     async function openScene3AtProgress(progress: number) {
       window.history.replaceState(null, '', '/scene/3');

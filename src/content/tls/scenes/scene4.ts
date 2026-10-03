@@ -32,9 +32,9 @@ export const scene4: SceneDefinition = {
       title: 'Hyperkalemia',
       caption: 'Hyperkalemia: the most acutely lethal, the most reversible if caught.',
       learnMore: {
-        heading: 'ECG progression — pattern, not precise thresholds',
-        body: 'The classical progression — peaked T waves → PR prolongation → P-wave flattening → QRS widening → sine wave → ventricular fibrillation or asystole — correlates only loosely with absolute serum K⁺. Individual presentation depends on rate of rise, concurrent ionized calcium and magnesium, acid-base status, and Na⁺ channel availability. The pattern is reliable; the numeric thresholds are not. Cairo-Bishop laboratory cutoff: K⁺ ≥ 6.0 mmol/L. Critical-action threshold (regardless of ECG): K⁺ ≥ 6.5 mmol/L.',
-        citations: cite('9', '18', '2', '17'),
+        heading: 'ECG progression — a pattern, not a test',
+        body: 'The classical progression — peaked T waves → PR prolongation and P-wave flattening → QRS widening → sine wave → ventricular fibrillation or asystole — is real, and the heart slows as it goes. But it is not dependable. Many patients with dangerous hyperkalemia have a normal or non-specific ECG; in one retrospective series, strict criteria for hyperkalemic ECG changes were met in fewer than one in five patients with hyperkalemia, and any ECG change at all in only about half. Some deteriorate suddenly without passing through the earlier stages, and the ECG correlates only loosely with serum K⁺ (rate of rise, ionized calcium and magnesium, acid-base status and Na⁺ channel availability all matter). A normal ECG does not exclude hyperkalemia: treat on the potassium level and the clinical picture. Cairo-Bishop laboratory cutoff: K⁺ ≥ 6.0 mmol/L. Critical-action threshold (regardless of ECG): K⁺ ≥ 6.5 mmol/L.',
+        citations: cite('9', '18', '19', '2', '17'),
       },
     },
     {

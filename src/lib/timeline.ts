@@ -102,9 +102,28 @@ export function tubuleScale(g: number): number {
   return lerp(TUBULE_BIRTH_SCALE, 1, smooth(clamp01((dive(g) - GROW_START) / (1 - GROW_START))));
 }
 
-/** Fade-in of the tubule's materials, once the kidney fills the frame. */
+/** Fade-in of the tubule's materials, once the kidney fills the frame, and out again as Scene 4's panels take over. */
 export function tubulePresence(g: number): number {
-  return smooth(clamp01((dive(g) - 0.45) / 0.3));
+  const fadeIn = smooth(clamp01((dive(g) - 0.45) / 0.3));
+  const fadeOut = smooth(clamp01((g - SYSTEMIC_START - 0.01) / 0.09));
+  return fadeIn * (1 - fadeOut);
+}
+
+// ---------------------------------------------------------------- the systemic panels (Scene 4)
+
+/** Over the end of Scene 3 the tubule fades out, the camera pulls back and the heart and hand panels fade in. */
+export const SYSTEMIC_SPAN = 0.14;
+export const SYSTEMIC_START = 4 - SYSTEMIC_SPAN;
+/** Scene 4 is built around the same point as the tubule, so the hand-over is a cross-fade in place. */
+export const SCENE4_OFFSET: [number, number, number] = [SCENE2_OFFSET[0] + KIDNEY_POS[0], SCENE2_OFFSET[1] + KIDNEY_POS[1], 0];
+
+export function systemicTransition(g: number): number {
+  return smooth(clamp01((g - SYSTEMIC_START) / SYSTEMIC_SPAN));
+}
+
+/** Fade-in of the panels' materials as the camera settles. */
+export function systemicPresence(g: number): number {
+  return smooth(clamp01((g - (SYSTEMIC_START + 0.05)) / 0.08));
 }
 
 // ---------------------------------------------------------------- camera
@@ -124,6 +143,9 @@ export interface CameraContext {
   cascadeTargetY: number;
   /** Distance that frames the nephron tubule in Scene 3. */
   tubuleDistance: number;
+  /** Distance and aim (world y) that frame the heart and hand panels in Scene 4. */
+  systemicDistance: number;
+  systemicTargetY: number;
   /** Narrow or shifted layouts keep the full mass framing instead of pushing in. */
   keepFullFraming: boolean;
 }
@@ -175,5 +197,16 @@ export function cameraPoseAt(g: number, ctx: CameraContext): CameraPose {
   const creep = 1 - 0.08 * smooth(clamp01(g - 3));
   const targetY = lerp(lerp(cascade.target[1], kidneyY, push), kidneyY + TUBULE_LOOK_DY, settle);
   const distance = lerp(lerp(cascade.position[2], KIDNEY_ZOOM_DISTANCE, push), ctx.tubuleDistance * creep, settle);
-  return { position: [0, targetY, distance], target: [0, targetY, 0], fov: 50 };
+  const tube: CameraPose = { position: [0, targetY, distance], target: [0, targetY, 0], fov: 50 };
+  if (g <= SYSTEMIC_START) return tube;
+
+  // End of Scene 3: the camera moves to frame the two panels (same spot, a different framing) as they cross-fade in.
+  const rest = cameraPoseAt(SYSTEMIC_START, ctx);
+  const m = systemicTransition(g);
+  const sy = ctx.systemicTargetY;
+  return {
+    position: [0, lerp(rest.position[1], sy, m), lerp(rest.position[2], ctx.systemicDistance, m)],
+    target: [0, lerp(rest.target[1], sy, m), 0],
+    fov: 50,
+  };
 }

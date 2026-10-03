@@ -1,10 +1,11 @@
 import { useLayoutEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import type { PerspectiveCamera } from 'three';
-import { DevPlaceholderMesh } from './DevPlaceholderMesh';
-import { cameraPoseAt, SCENE2_OFFSET, SCENE3_OFFSET, type CameraContext } from '../lib/timeline';
+import { cameraPoseAt, SCENE2_OFFSET, SCENE4_OFFSET, type CameraContext } from '../lib/timeline';
 import { Scene2, CASCADE_EXTENT, CASCADE_LOOK_AT_Y } from '../scenes/Scene2/Scene2';
 import { Scene3, TUBULE_EXTENT } from '../scenes/Scene3/Scene3';
+import { Scene4 } from '../scenes/Scene4/Scene4';
+import { SYSTEMIC_LAYOUTS, layoutForAspect } from '../scenes/Scene4/layout';
 import { FramingContext } from '../scenes/shared/framing';
 import { cameraDistanceFor, cameraDistanceForExtent, useViewShift } from '../scenes/shared/useSceneFraming';
 import { useGetG } from '../scenes/shared/useGetG';
@@ -35,6 +36,8 @@ export function Experience({ viewShift = 0 }: ExperienceProps) {
       cascadeDistance: cameraDistanceForExtent(aspect, CASCADE_EXTENT),
       cascadeTargetY: CASCADE_LOOK_AT_Y + SCENE2_OFFSET[1],
       tubuleDistance: cameraDistanceForExtent(aspect, TUBULE_EXTENT),
+      systemicDistance: cameraDistanceForExtent(aspect, SYSTEMIC_LAYOUTS[layoutForAspect(aspect)].extent),
+      systemicTargetY: SCENE4_OFFSET[1] + SYSTEMIC_LAYOUTS[layoutForAspect(aspect)].lookAtDy,
       // "Slightly closer" than the full framing only where the mass still fits; narrow or shifted layouts keep it.
       keepFullFraming: aspect < 1.2 || viewShift > 0,
     }),
@@ -59,19 +62,15 @@ export function Experience({ viewShift = 0 }: ExperienceProps) {
   const tumor = index <= 3;
   const cascade = index >= 1 && index <= 3;
   const nephron = index >= 2 && index <= 3;
-  const placeholder = index >= 4;
+  // The panels are mounted from Scene 3 so their models are loaded when the camera arrives, and stay for the rest.
+  const systemic = index >= 3;
 
   return (
     <FramingContext.Provider value={framing}>
       {tumor && <TumorStage reducedMotion={reducedMotion} />}
       {cascade && <Scene2 reducedMotion={reducedMotion} />}
       {nephron && <Scene3 reducedMotion={reducedMotion} />}
-      {/* Scenes 4–5 have no 3D content yet (Epics 7–8): a stand-in where the camera rests. */}
-      {placeholder && (
-        <group position={SCENE3_OFFSET}>
-          <DevPlaceholderMesh />
-        </group>
-      )}
+      {systemic && <Scene4 reducedMotion={reducedMotion} layout={layoutForAspect(aspect)} />}
     </FramingContext.Provider>
   );
 }

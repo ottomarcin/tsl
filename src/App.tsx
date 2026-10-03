@@ -19,6 +19,7 @@ import { ChipCluster, type ChipClusterPhase } from './components/ChipCluster/Chi
 import { ModeToggle } from './components/ModeToggle/ModeToggle';
 import { HighRiskBadge } from './components/HighRiskBadge/HighRiskBadge';
 import { forwardedWheelDelta } from './lib/wheelForward';
+import { SYSTEMIC_START } from './lib/timeline';
 import { labValuesAt, stepIndexFromProgress, timestampAt } from './lib/steps';
 import { FirstRunScrollHint } from './components/FirstRunScrollHint/FirstRunScrollHint';
 import styles from './App.module.css';
@@ -44,10 +45,12 @@ const LEGEND_ITEMS = [
  * requires per-step granularity that belongs to each scene epic (Epic 3+),
  * not this infrastructure chunk. Refined once those scenes exist.
  */
-function minimapHighlightFor(sceneIndex: number): string | 'full' | null {
+function minimapHighlightFor(sceneIndex: number): string | string[] | 'full' | null {
   if (sceneIndex < 3) return null;
   // Scene 3 happens inside the kidney, where the streams converge.
   if (sceneIndex === 3) return 'kidney';
+  // Scene 4 shows the two consequences that matter most acutely: potassium (cardiac) and calcium (via phosphate).
+  if (sceneIndex === 4) return ['K', 'PO4'];
   return 'full';
 }
 
@@ -62,6 +65,8 @@ export function App() {
   const toggleTheme = useAppStore((s) => s.toggleTheme);
   const modelQuality = useAppStore((s) => s.modelQuality);
   const toggleModelQuality = useAppStore((s) => s.toggleModelQuality);
+  // Once the camera leaves the tubule for the next scene's panels, the mechanism toggle goes with it.
+  const leavingScene = useAppStore((s) => s.globalProgress > SYSTEMIC_START + 0.02 && s.globalProgress < 4);
   const modeSelection = useAppStore((s) => s.modeSelection);
   const setMode = useAppStore((s) => s.setMode);
   const { active: assetsLoading, progress: assetProgress } = useProgress();
@@ -174,7 +179,7 @@ export function App() {
         ? 'shown'
         : 'hidden';
   const toggle = scene?.toggle;
-  const toggleShown = !!toggle && !!activeStep && activeStep.order >= toggle.fromStep;
+  const toggleShown = !!toggle && !!activeStep && activeStep.order >= toggle.fromStep && !leavingScene;
   const badgeVisible = scene?.summaryStep !== undefined && stepOrder >= scene.summaryStep;
   const minimapHighlight = minimapHighlightFor(sceneIndex);
 
@@ -230,7 +235,15 @@ export function App() {
               branches={tlsContent.cascade.branches}
               highlightedId={minimapHighlight}
               title="The cascade"
-              locationLabel={minimapHighlight === 'kidney' ? 'You are here: kidney' : minimapHighlight === 'full' ? 'The whole cascade' : undefined}
+              locationLabel={
+                minimapHighlight === 'kidney'
+                  ? 'You are here: kidney'
+                  : Array.isArray(minimapHighlight)
+                    ? 'You are here: K⁺ and Ca²⁺ effects'
+                    : minimapHighlight === 'full'
+                      ? 'The whole cascade'
+                      : undefined
+              }
             />
           </div>
         )}

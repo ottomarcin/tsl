@@ -7,7 +7,7 @@ export interface CascadeMinimapProps {
    * The branch id currently in focus; 'kidney' for the convergence point where the streams end (Scene 3); 'full' to
    * highlight everything (Scene 5); or null to hide the minimap entirely.
    */
-  highlightedId: string | 'kidney' | 'full' | null;
+  highlightedId: string | string[] | 'kidney' | 'full' | null;
   /** Heading shown above the map, saying what it is. */
   title?: string;
   /** "You are here" line under the map, saying where the current scene sits on it. */
@@ -43,6 +43,7 @@ function laneGeometry(branch: CascadeBranch, i: number, count: number) {
  */
 export function CascadeMinimap({ branches, highlightedId, title = 'The cascade', locationLabel, kidneyLabel = 'Kidney' }: CascadeMinimapProps) {
   if (highlightedId === null) return null;
+  const ids = Array.isArray(highlightedId) ? highlightedId : [highlightedId];
   const kidneyLit = highlightedId === 'kidney' || highlightedId === 'full';
 
   return (
@@ -50,7 +51,7 @@ export function CascadeMinimap({ branches, highlightedId, title = 'The cascade',
       <p className={styles.title}>{title}</p>
       <svg width={WIDTH} height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} aria-hidden="true">
         {branches.map((branch, i) => {
-          const isHighlighted = highlightedId === 'full' || highlightedId === branch.id;
+          const isHighlighted = highlightedId === 'full' || ids.includes(branch.id);
           const dimmed = highlightedId === 'kidney';
           const { x, d, ownTerminus, straightEnd } = laneGeometry(branch, i, branches.length);
           const color = `var(${branch.colorToken})`;

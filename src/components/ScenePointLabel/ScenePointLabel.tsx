@@ -15,15 +15,18 @@ export interface ScenePointLabelProps {
   getOpacity?: () => number;
   /** Smaller and dimmer, for secondary markers such as the enzyme. */
   subtle?: boolean;
+  /** Text read every frame, for labels whose words change with the scene (overrides `text`). */
+  getText?: () => string;
   /** A caption-sized label, for text that carries a message rather than naming a part. */
   large?: boolean;
 }
 
 /** A text label pinned to a point in the 3D scene (drei Html). Never takes pointer events. */
-export function ScenePointLabel({ position, text, color, opacity = 1, getOpacity, subtle = false, large = false }: ScenePointLabelProps) {
+export function ScenePointLabel({ position, text, color, opacity = 1, getOpacity, getText, subtle = false, large = false }: ScenePointLabelProps) {
   const span = useRef<HTMLSpanElement>(null);
   useFrame(() => {
     if (getOpacity && span.current) span.current.style.opacity = String(getOpacity());
+    if (getText && span.current && span.current.textContent !== getText()) span.current.textContent = getText();
   });
   // Inside ScrollControls, drei mounts Html in the scroll proxy by default, which scrolls the labels away with the page.
   // The canvas' own container stays put.
@@ -32,7 +35,8 @@ export function ScenePointLabel({ position, text, color, opacity = 1, getOpacity
   return (
     <Html position={position} center zIndexRange={[5, 0]} portal={portal} style={{ pointerEvents: 'none' }}>
       <span ref={span} className={[styles.label, subtle ? styles.subtle : '', large ? styles.large : ''].join(' ')} style={{ color, opacity: getOpacity ? 0 : opacity }}>
-        {text}
+        {/* With getText the words are written straight into the element each frame, so React must not own them. */}
+        {getText ? null : text}
       </span>
     </Html>
   );

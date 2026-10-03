@@ -11,12 +11,14 @@ describe('citations', () => {
     expect(() => cite('999')).toThrow(/Unknown citation id/);
   });
 
-  it('exposes exactly the 18 references from the scenario script bibliography', () => {
-    expect(allTlsCitations).toHaveLength(18);
-    expect(new Set(allTlsCitations.map((c) => c.id)).size).toBe(18);
+  it('exposes the 18 references from the scenario script bibliography plus [19], added for the ECG caveat', () => {
+    expect(allTlsCitations).toHaveLength(19);
+    expect(new Set(allTlsCitations.map((c) => c.id)).size).toBe(19);
+    expect(cite('19')[0].text).toContain('Montague');
+    expect(cite('19')[0].url).toMatch(/^https:\/\//);
   });
 
-  it('never uses a citation id outside the known 1–18 registry anywhere in the scene content', () => {
+  it('never uses a citation id outside the known registry anywhere in the scene content', () => {
     const knownIds = new Set(allTlsCitations.map((c) => c.id));
     for (const scene of tlsContent.scenes) {
       for (const step of scene.steps) {
