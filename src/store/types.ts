@@ -7,11 +7,14 @@ export type Theme = 'dark' | 'light';
 export type JumpSource = 'nav' | 'popstate' | 'url' | 'scroll';
 
 export interface ScrollApi {
-  scrollToPage: (page: number) => void;
+  /** `smooth` animates the scroll (nav clicks); otherwise the position jumps (deep links, back/forward). */
+  scrollToPage: (page: number, smooth?: boolean) => void;
 }
 
 export interface AppState {
   route: AppRoute;
+  /** What caused the last route change. Scroll-driven changes replace history instead of pushing. */
+  routeSource: JumpSource;
   /** 0–1 progress within the current scene. */
   sceneProgress: number;
   theme: Theme;
@@ -27,7 +30,8 @@ export interface AppState {
 }
 
 export interface AppActions {
-  jumpToScene: (index: number, opts?: { source?: JumpSource }) => void;
+  /** `progress` seeds the new scene's 0–1 progress (scroll-driven jumps know it); otherwise it starts at 0. */
+  jumpToScene: (index: number, opts?: { source?: JumpSource; progress?: number }) => void;
   goToLanding: () => void;
   goToEnd: () => void;
   setSceneProgress: (progress: number) => void;

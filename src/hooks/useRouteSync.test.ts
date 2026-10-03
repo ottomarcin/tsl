@@ -49,6 +49,40 @@ describe('useRouteSync', () => {
     expect(window.location.pathname).toBe('/scene/2');
   });
 
+  it('replaces the history entry for scroll-driven scene changes and pushes for nav clicks', async () => {
+    renderHook(() => useRouteSync());
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const push = vi.spyOn(window.history, 'pushState');
+    const replace = vi.spyOn(window.history, 'replaceState');
+    act(() => {
+      useAppStore.getState().jumpToScene(1, { source: 'scroll', progress: 0.2 });
+    });
+    expect(replace).toHaveBeenCalledWith(null, '', '/scene/1');
+    expect(push).not.toHaveBeenCalled();
+    act(() => {
+      useAppStore.getState().jumpToScene(4, { source: 'nav' });
+    });
+    expect(push).toHaveBeenCalledWith(null, '', '/scene/4');
+    push.mockRestore();
+    replace.mockRestore();
+  });
+
+  it('does not grow the back stack while scrolling across many scenes', async () => {
+    renderHook(() => useRouteSync());
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const before = window.history.length;
+    for (const i of [1, 2, 3, 2, 1, 0]) {
+      act(() => {
+        useAppStore.getState().jumpToScene(i, { source: 'scroll', progress: 0.5 });
+      });
+    }
+    expect(window.history.length).toBe(before);
+  });
+
   it('does not push a duplicate history entry if the URL already matches the route', async () => {
     setPath('/scene/1');
     renderHook(() => useRouteSync());

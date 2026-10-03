@@ -6,6 +6,7 @@ import { persistQuality, resolveInitialQuality } from '../lib/quality';
 
 export const useAppStore = create<AppStore>((set, get) => ({
   route: { kind: 'landing' },
+  routeSource: 'url',
   sceneProgress: 0,
   theme: readDomTheme(),
   labValues: {},
@@ -16,23 +17,27 @@ export const useAppStore = create<AppStore>((set, get) => ({
   accessibilityMode: false,
   scrollApi: null,
 
-  jumpToScene(index: number, opts?: { source?: JumpSource }) {
+  jumpToScene(index: number, opts?: { source?: JumpSource; progress?: number }) {
     const clamped = Math.max(0, Math.min(SCENE_COUNT - 1, index));
-    set({ route: { kind: 'scene', index: clamped }, sceneProgress: 0 });
-    if (opts?.source !== 'scroll') {
-      get().scrollApi?.scrollToPage(clamped);
+    const source = opts?.source ?? 'nav';
+    // One update carries the route and its progress, so no frame renders the new scene with the old scene's progress.
+    set({ route: { kind: 'scene', index: clamped }, routeSource: source, sceneProgress: opts?.progress ?? 0 });
+    if (source !== 'scroll') {
+      get().scrollApi?.scrollToPage(clamped, source === 'nav' && !get().reducedMotion);
     }
   },
 
   goToLanding() {
-    set({ route: { kind: 'landing' }, sceneProgress: 0 });
+    set({ route: { kind: 'landing' }, routeSource: 'nav', sceneProgress: 0 });
   },
 
   goToEnd() {
-    set({ route: { kind: 'end' }, sceneProgress: 0 });
+    set({ route: { kind: 'end' }, routeSource: 'nav', sceneProgress: 0 });
   },
 
   setSceneProgress(progress: number) {
+    // Called every frame while scrolling: skip no-op writes so subscribers aren't woken for nothing.
+    if (Math.abs(progress - get().sceneProgress) < 1e-4) return;
     set({ sceneProgress: progress });
   },
 

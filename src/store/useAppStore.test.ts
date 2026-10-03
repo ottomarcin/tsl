@@ -32,14 +32,14 @@ describe('useAppStore', () => {
       const scrollToPage = vi.fn();
       useAppStore.getState().registerScrollApi({ scrollToPage });
       useAppStore.getState().jumpToScene(2, { source: 'nav' });
-      expect(scrollToPage).toHaveBeenCalledWith(2);
+      expect(scrollToPage).toHaveBeenCalledWith(2, true);
     });
 
     it('calls scrollApi.scrollToPage when no source is given (default: not scroll-originated)', () => {
       const scrollToPage = vi.fn();
       useAppStore.getState().registerScrollApi({ scrollToPage });
       useAppStore.getState().jumpToScene(4);
-      expect(scrollToPage).toHaveBeenCalledWith(4);
+      expect(scrollToPage).toHaveBeenCalledWith(4, true);
     });
 
     it('does NOT call scrollApi.scrollToPage when the jump originates from scroll itself', () => {
@@ -144,6 +144,54 @@ describe('useAppStore', () => {
     expect(useAppStore.getState().accessibilityMode).toBe(true);
     useAppStore.getState().setAccessibilityMode(false);
     expect(useAppStore.getState().accessibilityMode).toBe(false);
+  });
+
+  describe('scroll-driven navigation', () => {
+    it('asks for an instant scroll (no animation) for deep links and back/forward', () => {
+      const scrollToPage = vi.fn();
+      useAppStore.getState().registerScrollApi({ scrollToPage });
+      useAppStore.getState().jumpToScene(3, { source: 'popstate' });
+      useAppStore.getState().jumpToScene(1, { source: 'url' });
+      expect(scrollToPage).toHaveBeenNthCalledWith(1, 3, false);
+      expect(scrollToPage).toHaveBeenNthCalledWith(2, 1, false);
+    });
+
+    it('does not animate the scroll for nav clicks under reduced motion', () => {
+      const scrollToPage = vi.fn();
+      useAppStore.getState().registerScrollApi({ scrollToPage });
+      useAppStore.getState().setReducedMotion(true);
+      useAppStore.getState().jumpToScene(2, { source: 'nav' });
+      expect(scrollToPage).toHaveBeenCalledWith(2, false);
+    });
+
+    it('applies the route and its progress in one update, so no state has the new scene with the old progress', () => {
+      const seen: [number, number][] = [];
+      const unsub = useAppStore.subscribe((s) => seen.push([s.route.kind === 'scene' ? s.route.index : -1, s.sceneProgress]));
+      useAppStore.getState().setSceneProgress(0.05);
+      seen.length = 0;
+      useAppStore.getState().jumpToScene(0, { source: 'scroll', progress: 0.97 });
+      unsub();
+      expect(seen).toEqual([[0, 0.97]]);
+    });
+
+    it('records what caused the route change', () => {
+      useAppStore.getState().jumpToScene(2, { source: 'scroll', progress: 0.1 });
+      expect(useAppStore.getState().routeSource).toBe('scroll');
+      useAppStore.getState().goToEnd();
+      expect(useAppStore.getState().routeSource).toBe('nav');
+    });
+
+    it('does not notify subscribers when progress has not really changed', () => {
+      useAppStore.getState().setSceneProgress(0.5);
+      let calls = 0;
+      const unsub = useAppStore.subscribe(() => calls++);
+      useAppStore.getState().setSceneProgress(0.50001);
+      useAppStore.getState().setSceneProgress(0.5);
+      expect(calls).toBe(0);
+      useAppStore.getState().setSceneProgress(0.6);
+      expect(calls).toBe(1);
+      unsub();
+    });
   });
 
   describe('model quality', () => {

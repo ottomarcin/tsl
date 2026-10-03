@@ -98,9 +98,10 @@ export function App() {
     setReducedMotion(reducedMotion);
   }, [reducedMotion, setReducedMotion]);
 
-  const sceneProgress = useAppStore((s) => s.sceneProgress);
   const activeScene = route.kind === 'scene' ? tlsContent.scenes[route.index] : undefined;
-  const stepIndex = activeScene ? stepIndexFromProgress(sceneProgress, activeScene.steps.length) : 0;
+  // Subscribe to the step, not the raw progress: progress changes every frame while scrolling and would re-render the
+  // whole shell 60×/s. The 3D scenes read progress straight from the store inside useFrame.
+  const stepIndex = useAppStore((s) => (activeScene ? stepIndexFromProgress(s.sceneProgress, activeScene.steps.length) : 0));
   const activeStep = activeScene?.steps[stepIndex];
 
   // Lab values follow the story position: all targets up to the active step, so deep links and skipped steps stay correct.

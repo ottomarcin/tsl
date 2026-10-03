@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useLayoutEffect, useMemo } from 'react';
 import { useThree } from '@react-three/fiber';
 import { PerspectiveCamera } from 'three';
 import { ModelBoundary } from '../../assets/ModelBoundary';
@@ -25,7 +25,8 @@ export function Scene0({ reducedMotion = false, viewShift = 0 }: Scene0Props) {
   const camera = useThree((s) => s.camera);
   const distance = useSceneFraming(viewShift);
 
-  useEffect(() => {
+  // Layout effect: runs before the first frame, so arriving from Scene 1 (pulled-back camera) never flashes it.
+  useLayoutEffect(() => {
     camera.position.set(0, 0, distance);
     camera.lookAt(0, 0, 0);
     if (camera instanceof PerspectiveCamera && camera.fov !== 50) {

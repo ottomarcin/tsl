@@ -30,11 +30,13 @@ export function ScrollProgressSync() {
 
   useEffect(() => {
     registerScrollApi({
-      scrollToPage: (page: number) => {
+      scrollToPage: (page: number, smooth = false) => {
         const el = scroll.el;
         const max = el.scrollHeight - el.clientHeight;
         if (max > 0) {
-          el.scrollTop = (page / SCENE_COUNT) * max;
+          const top = (page / SCENE_COUNT) * max;
+          if (smooth) el.scrollTo({ top, behavior: 'smooth' });
+          else el.scrollTop = top;
           pendingPage.current = null;
           settling.current = { page, frames: 180 };
         } else {
@@ -74,10 +76,13 @@ export function ScrollProgressSync() {
     const globalOffset = scroll.offset;
     const sceneIndex = Math.min(SCENE_COUNT - 1, Math.floor(globalOffset * SCENE_COUNT));
     const local = scroll.range(sceneIndex / SCENE_COUNT, 1 / SCENE_COUNT);
-    setSceneProgress(local);
     if (sceneIndex !== lastScene.current) {
       lastScene.current = sceneIndex;
-      jumpToScene(sceneIndex, { source: 'scroll' });
+      // Route and progress change together; writing progress first and then resetting it on the jump made the new
+      // scene flash its start state for a frame, which is most visible scrolling up (new scene is at its end).
+      jumpToScene(sceneIndex, { source: 'scroll', progress: local });
+    } else {
+      setSceneProgress(local);
     }
   });
 

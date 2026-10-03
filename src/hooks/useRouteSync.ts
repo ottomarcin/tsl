@@ -17,6 +17,7 @@ function applyRoute(route: AppRoute, source: 'url' | 'popstate') {
  */
 export function useRouteSync(): void {
   const route = useAppStore((s) => s.route);
+  const routeSource = useAppStore((s) => s.routeSource);
   const initialized = useRef(false);
 
   // Mount: parse the current URL, apply it, then normalize history with a
@@ -45,7 +46,11 @@ export function useRouteSync(): void {
     if (!initialized.current) return;
     const nextPath = routeToPathname(route);
     if (window.location.pathname !== nextPath) {
-      window.history.pushState(null, '', nextPath);
+      // Scrolling across scenes must not fill the back stack: Back should leave the page or undo a nav click, not
+      // retrace every scene boundary the visitor scrolled over.
+      if (routeSource === 'scroll') window.history.replaceState(null, '', nextPath);
+      else window.history.pushState(null, '', nextPath);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route]);
 }
