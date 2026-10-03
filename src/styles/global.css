@@ -37,3 +37,10 @@ body * {
     transition-duration: 0ms !important;
   }
 }
+
+/* One focus ring for everything that takes focus by keyboard (design spec §9): 2px, offset 4px. Components that need a
+   tighter offset set their own. */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 4px;
+}

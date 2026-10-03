@@ -17,6 +17,8 @@ export interface DiseaseMetric {
   /** Generic key (e.g. 'K') — consumers never assume this is TLS-specific. */
   id: string;
   label: string;
+  /** Spoken name ("Potassium"), for announcements; the label may be a symbol ("K⁺"). */
+  name?: string;
   unit: string;
   decimalPlaces: number;
   thresholds: MetricThresholds;

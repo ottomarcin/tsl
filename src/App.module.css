@@ -18,6 +18,13 @@
   min-height: 0;
 }
 
+/* Text-only mode: the scene as text, in place of the canvas area. */
+.textArea {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .themeToggleFloating {
   display: flex;
   align-items: center;
@@ -31,8 +38,8 @@
 .minimapFloating {
   position: absolute;
   top: 24px;
-  /* Clear of the two toggles (quality, theme) at the top right. */
-  right: 108px;
+  /* Clear of the three toggles (text-only, quality, theme) at the top right. */
+  right: 148px;
   z-index: var(--z-persistent-ui);
 }
 
@@ -137,10 +144,10 @@
   position: absolute;
   top: var(--space-4);
   /* Left of the minimap (top right), which is 180px wide plus the toggles' margin. */
-  right: 340px;
+  right: 380px;
   z-index: var(--z-persistent-ui);
   width: max-content;
-  max-width: calc(100% - 340px - var(--space-4));
+  max-width: calc(100% - 380px - var(--space-4));
 }
 
 /* Not enough room beside the minimap: it is hidden below desktop width (Epic 11 turns it into an icon that opens it)

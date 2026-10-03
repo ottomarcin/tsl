@@ -3,6 +3,7 @@ import type { AppStore, JumpSource } from './types';
 import { END_PROGRESS, SCENE_COUNT } from './types';
 import { persistTheme, readDomTheme } from '../lib/theme';
 import { persistQuality, resolveInitialQuality } from '../lib/quality';
+import { persistTextOnly, resolveInitialTextOnly } from '../lib/accessibility';
 
 export const useAppStore = create<AppStore>((set, get) => ({
   route: { kind: 'landing' },
@@ -17,7 +18,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   modeSelection: {},
   modelQuality: resolveInitialQuality(window.location.search),
   reducedMotion: false,
-  accessibilityMode: false,
+  accessibilityMode: resolveInitialTextOnly(),
   scrollApi: null,
 
   jumpToScene(index: number, opts?: { source?: JumpSource; progress?: number }) {
@@ -140,11 +141,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   setAccessibilityMode(enabled: boolean) {
+    persistTextOnly(enabled);
     set({ accessibilityMode: enabled });
   },
 
   toggleAccessibilityMode() {
-    set((state) => ({ accessibilityMode: !state.accessibilityMode }));
+    get().setAccessibilityMode(!get().accessibilityMode);
   },
 
   registerScrollApi(api) {

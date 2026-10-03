@@ -16,17 +16,12 @@ const HEADING = 'Try interventions';
 const HINT = 'Adjust the slider and toggles to see how interventions change the cascade. Reset returns you to baseline.';
 const NOTE = 'Illustrative: simple multipliers to show direction and size of effect, not a prediction for a patient.';
 
-/** The time scrubber (from the first intervention on) and the free-play panel (step 5.6); on phones the panel is a bottom sheet. */
-export function Scene5Controls({ stepIndex, isMobile }: { stepIndex: number; isMobile: boolean }) {
-  const scrub = useAppStore((s) => s.scrub);
+/** The free-play panel wired to the store: used on the scene and in the text-only version. */
+export function FreePlayPanel() {
   const state = useAppStore((s) => s.interventionState);
-  const setScrub = useAppStore((s) => s.setScrub);
   const setIntervention = useAppStore((s) => s.setInterventionState);
   const reset = useAppStore((s) => s.resetInterventions);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const tau = displayedTime(useStoryTime(), scrub);
-
-  const panel = (
+  return (
     <InterventionPanel
       heading={HEADING}
       hint={HINT}
@@ -41,6 +36,16 @@ export function Scene5Controls({ stepIndex, isMobile }: { stepIndex: number; isM
       note={NOTE}
     />
   );
+}
+
+/** The time scrubber (from the first intervention on) and the free-play panel (step 5.6); on phones the panel is a bottom sheet. */
+export function Scene5Controls({ stepIndex, isMobile }: { stepIndex: number; isMobile: boolean }) {
+  const scrub = useAppStore((s) => s.scrub);
+  const setScrub = useAppStore((s) => s.setScrub);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const tau = displayedTime(useStoryTime(), scrub);
+
+  const panel = <FreePlayPanel />;
 
   return (
     <>

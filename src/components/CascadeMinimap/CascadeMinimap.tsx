@@ -45,7 +45,7 @@ export function CascadeMinimap({ branches, highlightedId, title = 'The cascade',
   const kidneyLit = highlightedId === 'kidney' || highlightedId === 'full';
 
   return (
-    <div className={styles.panel} role="img" aria-label="Cascade progress minimap">
+    <div className={styles.panel} aria-hidden="true" data-testid="cascade-minimap">
       <p className={styles.title}>{title}</p>
       <svg width={WIDTH} height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} aria-hidden="true">
         {branches.map((branch, i) => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { labValuesAt, latestTimestamp, stepIndexFromProgress, timestampAt } from './steps';
+import type { SceneDefinition } from '../content/schema';
+import { adjacentStep, labValuesAt, latestTimestamp, stepIndexFromProgress, timestampAt } from './steps';
 
 describe('stepIndexFromProgress', () => {
   it('splits progress into equal bands', () => {
@@ -77,5 +78,24 @@ describe('timestampAt', () => {
   });
   it('is undefined when nothing has set one', () => {
     expect(timestampAt([{ id: 'x', index: 0, title: '', steps: [{ id: 'y', order: 1, caption: '' }] }], 0, 0)).toBeUndefined();
+  });
+});
+
+describe('adjacentStep', () => {
+  const scenes = [
+    { steps: [{}, {}, {}] },
+    { steps: [{}, {}] },
+  ] as unknown as SceneDefinition[];
+  it('moves within a scene', () => {
+    expect(adjacentStep(scenes, 0, 0, 1)).toEqual({ scene: 0, step: 1 });
+    expect(adjacentStep(scenes, 0, 2, -1)).toEqual({ scene: 0, step: 1 });
+  });
+  it('crosses into the next scene at its first step, and back into the last step of the previous', () => {
+    expect(adjacentStep(scenes, 0, 2, 1)).toEqual({ scene: 1, step: 0 });
+    expect(adjacentStep(scenes, 1, 0, -1)).toEqual({ scene: 0, step: 2 });
+  });
+  it('stops at both ends', () => {
+    expect(adjacentStep(scenes, 0, 0, -1)).toBeNull();
+    expect(adjacentStep(scenes, 1, 1, 1)).toBeNull();
   });
 });

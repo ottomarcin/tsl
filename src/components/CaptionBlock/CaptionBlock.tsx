@@ -15,7 +15,17 @@ export function CaptionBlock({ sceneTitle, caption, learnMore }: CaptionBlockPro
   const panelId = useId();
 
   return (
-    <section className={styles.block} aria-label="Scene caption">
+    <section
+      className={styles.block}
+      aria-label="Scene caption"
+      onKeyDown={(e) => {
+        // Escape closes the open panel (design spec §9) and leaves focus where it was.
+        if (e.key === 'Escape' && open) {
+          setOpen(false);
+          e.stopPropagation();
+        }
+      }}
+    >
       <h2 className={styles.title}>{sceneTitle}</h2>
       <p className={styles.caption} aria-live="polite">
         {caption}

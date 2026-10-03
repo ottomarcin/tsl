@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from './store/useAppStore';
-import { useMediaQuery, useBreakpoint, useFirstRunHint, useReducedMotion, useRouteSync, useWebGLSupport } from './hooks';
+import { useMediaQuery, useBreakpoint, useFirstRunHint, useReducedMotion, useRouteSync, useWebGLSupport, useAnnouncements } from './hooks';
 import { Menu } from 'lucide-react';
 import { ScrollCanvas } from './engine/ScrollCanvas';
 import { tlsContent } from './content/tls';
@@ -23,11 +23,17 @@ import { Scene5Controls } from './scenes/Scene5/Scene5Controls';
 import { useScene5Labs } from './scenes/Scene5/useScene5Labs';
 import { SCENE5_INDEX } from './lib/scene5';
 import { EndCard } from './components/EndCard/EndCard';
+import { LiveAnnouncer } from './components/LiveAnnouncer/LiveAnnouncer';
+import { SkipLink } from './components/SkipLink/SkipLink';
+import { AccessibilityToggle } from './components/AccessibilityToggle/AccessibilityToggle';
+import { TextOnlyScene } from './scenes/TextOnly/TextOnlyScene';
+import { textStepId } from './components/TextOnlyView/TextOnlyView';
+import { pageTitle } from './lib/announce';
 import { ReplaySceneModal } from './components/ReplaySceneModal/ReplaySceneModal';
 import { SourcesModal } from './components/SourcesModal/SourcesModal';
 import { allTlsCitations, sourceLink } from './content/tls/citations';
 import { SYSTEMIC_START } from './lib/timeline';
-import { labValuesAt, stepIndexFromProgress, timestampAt } from './lib/steps';
+import { adjacentStep, labValuesAt, stepIndexFromProgress, timestampAt } from './lib/steps';
 import { FirstRunScrollHint } from './components/FirstRunScrollHint/FirstRunScrollHint';
 import styles from './App.module.css';
 
@@ -98,6 +104,8 @@ export function App() {
   const [replayOpen, setReplayOpen] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const restart = useAppStore((s) => s.restart);
+  const textOnly = useAppStore((s) => s.accessibilityMode);
+  const toggleTextOnly = useAppStore((s) => s.toggleAccessibilityMode);
 
   useRouteSync();
 
@@ -135,6 +143,15 @@ export function App() {
     setLabValues(labValuesAt(tlsContent.scenes, activeSceneIndex, stepIndex));
   }, [activeSceneIndex, inScene5, stepIndex, setLabValues]);
   const scene5Timestamp = useScene5Labs(inScene5, stepIndex);
+  const announcement = useAnnouncements(activeScene, tlsContent.metrics, labValues);
+
+  // The document title follows the scene (design spec §9).
+  useEffect(() => {
+    document.title = pageTitle(
+      'Tumor Lysis Syndrome',
+      route.kind === 'scene' ? { kind: 'scene', index: route.index, title: tlsContent.scenes[route.index].title } : { kind: route.kind },
+    );
+  }, [route]);
 
   if (!webglSupported) {
     return (
@@ -179,6 +196,8 @@ export function App() {
 
   return (
     <div className={styles.sceneLayout} data-testid="app-shell">
+      <SkipLink targetId="main-content">Skip to content</SkipLink>
+      <LiveAnnouncer message={announcement} />
       <AssetLoadingBar active={assetsLoading} progress={assetProgress} />
       <SideNav
         scenes={SIDE_NAV_SCENES}
@@ -186,7 +205,8 @@ export function App() {
         currentStepIndex={stepIndex}
         onJumpToStep={(sceneI, stepI) => {
           setNavSheetOpen(false);
-          jumpToStep(sceneI, stepI, tlsContent.scenes[sceneI]?.steps.length ?? 1);
+          if (textOnly) document.getElementById(textStepId(sceneI, stepI))?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' });
+          else jumpToStep(sceneI, stepI, tlsContent.scenes[sceneI]?.steps.length ?? 1);
         }}
         expanded={sideNavExpanded}
         onToggleExpanded={toggleSideNav}
@@ -206,7 +226,9 @@ export function App() {
         sheetOpen={navSheetOpen}
         onSheetOpenChange={setNavSheetOpen}
       />
-      <div
+      <main
+        id="main-content"
+        tabIndex={-1}
         className={styles.mainArea}
         onWheel={(e) => {
           // A wheel turn over the interface should still scroll the story (see lib/wheelForward).
@@ -220,10 +242,11 @@ export function App() {
           </button>
         )}
         <div className={styles.themeToggleFloating}>
-          <QualityToggle quality={modelQuality} onToggle={toggleModelQuality} />
+          <AccessibilityToggle textOnly={textOnly} onToggle={toggleTextOnly} />
+          {!textOnly && <QualityToggle quality={modelQuality} onToggle={toggleModelQuality} />}
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
         </div>
-        {minimapHighlight && (
+        {minimapHighlight && !textOnly && (
           <div className={styles.minimapFloating}>
             <CascadeMinimap
               branches={tlsContent.cascade.branches}
@@ -232,38 +255,59 @@ export function App() {
             />
           </div>
         )}
-        {sceneIndex === 0 && (
+        {sceneIndex === 0 && !textOnly && (
           <div className={styles.firstRunHintFloating}>
             <FirstRunScrollHint visible={hintVisible} onDismiss={dismissHint} />
           </div>
         )}
-        <div className={styles.canvasArea}>
-          <ScrollCanvas viewShift={shortViewport && !isMobile ? 0.22 : 0} />
-          {scene?.chips && <ChipCluster chips={scene.chips} phase={chipPhase} reducedMotion={reducedMotion} layout={isMobile ? 'column' : 'ring'} shifted={shortViewport && !isMobile} />}
-          {scene?.summaryBadge && (
-            <div className={styles.badgeSlot}>
-              <HighRiskBadge
-                label={scene.summaryBadge.label}
-                state={scene.summaryBadge.state}
-                visible={badgeVisible}
-                reducedMotion={reducedMotion}
-              />
-            </div>
-          )}
-          {toggleShown && toggle && scene && (
-            <div className={styles.modeToggleFloating}>
-              <ModeToggle toggle={toggle} value={modeSelection[scene.id] ?? toggle.defaultId} onChange={(id) => setMode(scene.id, id)} />
-            </div>
-          )}
-          {sceneIndex === SCENE5_INDEX && !isEnd && <Scene5Controls stepIndex={stepIndex} isMobile={isMobile} />}
-          <div className={styles.bottomStack}>
-            {scene && activeStep && (
-              <CaptionBlock key={activeStep.id} sceneTitle={scene.title} caption={activeStep.caption} learnMore={activeStep.learnMore} />
-            )}
-            {!isEnd && <ColorLegend items={LEGEND_ITEMS} expanded={legendExpanded} onToggleExpanded={() => setLegendExpanded((e) => !e)} />}
+        {textOnly && scene && (
+          <div className={styles.textArea}>
+            <TextOnlyScene sceneIndex={sceneIndex} />
           </div>
-        </div>
-        {!isEnd && (
+        )}
+        {!textOnly && (
+          <div
+            className={styles.canvasArea}
+            // With the keyboard on the 3D scene itself, the arrow keys step through the story (design spec §9).
+            tabIndex={isEnd ? undefined : 0}
+            role={isEnd ? undefined : 'group'}
+            aria-label={isEnd ? undefined : '3D scene. Use the arrow keys to move between steps.'}
+            onKeyDown={(e) => {
+              if (e.target !== e.currentTarget || isEnd) return;
+              const direction = e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === 'PageDown' ? 1 : e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp' ? -1 : 0;
+              if (!direction) return;
+              e.preventDefault();
+              const to = adjacentStep(tlsContent.scenes, sceneIndex, stepIndex, direction);
+              if (to) jumpToStep(to.scene, to.step, tlsContent.scenes[to.scene].steps.length);
+            }}
+          >
+            <ScrollCanvas viewShift={shortViewport && !isMobile ? 0.22 : 0} />
+            {scene?.chips && <ChipCluster chips={scene.chips} phase={chipPhase} reducedMotion={reducedMotion} layout={isMobile ? 'column' : 'ring'} shifted={shortViewport && !isMobile} />}
+            {scene?.summaryBadge && (
+              <div className={styles.badgeSlot}>
+                <HighRiskBadge
+                  label={scene.summaryBadge.label}
+                  state={scene.summaryBadge.state}
+                  visible={badgeVisible}
+                  reducedMotion={reducedMotion}
+                />
+              </div>
+            )}
+            {toggleShown && toggle && scene && (
+              <div className={styles.modeToggleFloating}>
+                <ModeToggle toggle={toggle} value={modeSelection[scene.id] ?? toggle.defaultId} onChange={(id) => setMode(scene.id, id)} />
+              </div>
+            )}
+            {sceneIndex === SCENE5_INDEX && !isEnd && <Scene5Controls stepIndex={stepIndex} isMobile={isMobile} />}
+            <div className={styles.bottomStack}>
+              {scene && activeStep && (
+                <CaptionBlock key={activeStep.id} sceneTitle={scene.title} caption={activeStep.caption} learnMore={activeStep.learnMore} />
+              )}
+              {!isEnd && <ColorLegend items={LEGEND_ITEMS} expanded={legendExpanded} onToggleExpanded={() => setLegendExpanded((e) => !e)} />}
+            </div>
+          </div>
+        )}
+        {!isEnd && !textOnly && (
         <LabStrip
           metrics={tlsContent.metrics}
           values={labValues}
@@ -283,7 +327,7 @@ export function App() {
             onRestart={restart}
           />
         )}
-      </div>
+      </main>
       <ReplaySceneModal
         open={replayOpen}
         onOpenChange={setReplayOpen}

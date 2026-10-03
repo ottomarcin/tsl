@@ -41,3 +41,17 @@ export function timestampAt(scenes: SceneDefinition[], sceneIndex: number, stepI
   }
   return stamp;
 }
+
+/** The step before or after (`direction` -1 / +1), crossing into the neighbouring scene at the ends; null at the very ends. */
+export function adjacentStep(
+  scenes: SceneDefinition[],
+  sceneIndex: number,
+  stepIndex: number,
+  direction: -1 | 1,
+): { scene: number; step: number } | null {
+  const next = stepIndex + direction;
+  if (next >= 0 && next < scenes[sceneIndex].steps.length) return { scene: sceneIndex, step: next };
+  const scene = sceneIndex + direction;
+  if (scene < 0 || scene >= scenes.length) return null;
+  return { scene, step: direction === 1 ? 0 : scenes[scene].steps.length - 1 };
+}

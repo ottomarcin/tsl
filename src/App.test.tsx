@@ -102,15 +102,15 @@ describe('App', () => {
     window.history.replaceState(null, '', '/scene/1');
     const { App, useAppStore } = await setUpApp(true);
     const { rerender } = render(<App />);
-    // Query by the minimap's own accessible role, not a bare `svg` selector —
+    // Query by the minimap's test id, not a bare `svg` selector —
     // SideNav's Lucide icons (Check/Circle) are also <svg> elements.
-    expect(screen.queryByRole('img', { name: /Cascade progress minimap/ })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('cascade-minimap')).not.toBeInTheDocument();
 
     await act(async () => {
       useAppStore.getState().jumpToScene(3, { source: 'nav' });
     });
     rerender(<App />);
-    expect(screen.getByRole('img', { name: /Cascade progress minimap/ })).toBeInTheDocument();
+    expect(screen.getByTestId('cascade-minimap')).toBeInTheDocument();
   });
 
   describe('the end card', () => {
@@ -331,7 +331,7 @@ describe('App', () => {
 
     it('keeps the minimap with the potassium and calcium paths lit', async () => {
       await openScene4AtProgress(0.1);
-      expect(screen.getByRole('img', { name: /Cascade progress minimap/ })).toBeInTheDocument();
+      expect(screen.getByTestId('cascade-minimap')).toBeInTheDocument();
     });
 
     it('has the four steps in the side menu and no mechanism toggle', async () => {
@@ -438,7 +438,7 @@ describe('App', () => {
 
     it('shows no cascade minimap (the cascade itself is on screen)', async () => {
       await openScene5AtProgress(at(1));
-      expect(screen.queryByRole('img', { name: /Cascade progress minimap/ })).not.toBeInTheDocument();
+      expect(screen.queryByTestId('cascade-minimap')).not.toBeInTheDocument();
     });
 
     it('has six steps in the side menu', async () => {
@@ -454,6 +454,147 @@ describe('App', () => {
         unmount();
         vi.resetModules();
       }
+    });
+  });
+
+  describe('accessibility', () => {
+    async function openScene(index: number, progress = 0.05) {
+      window.history.replaceState(null, '', `/scene/${index}`);
+      const { App, useAppStore } = await setUpApp(true);
+      const utils = render(<App />);
+      await act(async () => {
+        useAppStore.getState().setSceneProgress(progress);
+      });
+      return { ...utils, useAppStore };
+    }
+
+    it('puts a skip link first in the tab order, and it moves focus to the main content', async () => {
+      await openScene(2);
+      await userEvent.tab();
+      const skip = screen.getByRole('link', { name: 'Skip to content' });
+      expect(skip).toHaveFocus();
+      await userEvent.keyboard('{Enter}');
+      expect(screen.getByRole('main')).toHaveFocus();
+    });
+
+    it('titles the document per scene', async () => {
+      const { useAppStore } = await openScene(2);
+      expect(document.title).toBe(`Tumor Lysis Syndrome · Scene 2 — ${tlsContent.scenes[2].title}`);
+      await act(async () => useAppStore.getState().jumpToScene(4, { source: 'url' }));
+      expect(document.title).toBe(`Tumor Lysis Syndrome · Scene 4 — ${tlsContent.scenes[4].title}`);
+      await act(async () => useAppStore.getState().goToEnd());
+      expect(document.title).toBe('Tumor Lysis Syndrome · End');
+    });
+
+    it('announces a scene when it is entered', async () => {
+      await openScene(2);
+      expect(screen.getByTestId('live-announcer')).toHaveTextContent(`Scene 2: ${tlsContent.scenes[2].title}. ${tlsContent.scenes[2].steps[0].caption}`);
+    });
+
+    it('announces the labs that change, once they have settled', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      try {
+        const { useAppStore } = await openScene(2);
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(1200);
+        });
+        await act(async () => useAppStore.getState().setLabValues({ K: 9.9 }));
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(1200);
+        });
+        expect(screen.getByTestId('live-announcer')).toHaveTextContent('Potassium now 9.9 mmol/L, critical.');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('hides the minimap from assistive technology', async () => {
+      await openScene(3);
+      expect(screen.getByTestId('cascade-minimap')).toHaveAttribute('aria-hidden', 'true');
+    });
+
+    it('steps through the story with the arrow keys when the 3D scene itself has focus', async () => {
+      const { useAppStore } = await openScene(2, 0.05);
+      const scrollToSceneProgress = vi.fn();
+      await act(async () => useAppStore.setState({ scrollApi: { scrollBy: vi.fn(), scrollToPage: vi.fn(), scrollToSceneProgress } }));
+      const viewport = screen.getByRole('group', { name: /3D scene/ });
+      viewport.focus();
+      await userEvent.keyboard('{ArrowDown}');
+      expect(scrollToSceneProgress).toHaveBeenLastCalledWith(2, 1.5 / tlsContent.scenes[2].steps.length, true);
+      // The story has moved on to the second step (the mocked scroll engine does not move by itself).
+      await act(async () => useAppStore.getState().setSceneProgress(1.5 / tlsContent.scenes[2].steps.length));
+      await userEvent.keyboard('{ArrowUp}');
+      // Back from the second step to the first.
+      expect(scrollToSceneProgress).toHaveBeenLastCalledWith(2, 0.5 / tlsContent.scenes[2].steps.length, true);
+    });
+
+    it('leaves the arrow keys to a control that has focus (a slider, a switch)', async () => {
+      const { useAppStore } = await openScene(5, 0.95);
+      const scrollToSceneProgress = vi.fn();
+      await act(async () => useAppStore.setState({ scrollApi: { scrollBy: vi.fn(), scrollToPage: vi.fn(), scrollToSceneProgress } }));
+      screen.getByRole('slider', { name: 'IV hydration' }).focus();
+      await userEvent.keyboard('{ArrowRight}');
+      expect(scrollToSceneProgress).not.toHaveBeenCalled();
+    });
+
+    describe('text-only mode', () => {
+      it('replaces the 3D scene with every step of the scene as text, and brings it back', async () => {
+        const { useAppStore } = await openScene(2);
+        expect(screen.getByTestId('mock-scroll-canvas')).toBeInTheDocument();
+        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        expect(screen.queryByTestId('mock-scroll-canvas')).not.toBeInTheDocument();
+        const scene = tlsContent.scenes[2];
+        expect(screen.getByRole('heading', { level: 1, name: `Scene 2: ${scene.title}` })).toBeInTheDocument();
+        for (const step of scene.steps) expect(within(screen.getByRole('article')).getByText(step.caption)).toBeInTheDocument();
+        expect(useAppStore.getState().accessibilityMode).toBe(true);
+        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        expect(screen.getByTestId('mock-scroll-canvas')).toBeInTheDocument();
+      });
+
+      it('remembers the choice across a reload', async () => {
+        await openScene(2);
+        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        expect(window.localStorage.getItem('textOnlyMode')).toBe('true');
+      });
+
+      it('takes the 3D chrome out of the page: no canvas, no lab strip, no 3D viewport stop', async () => {
+        await openScene(2);
+        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        expect(screen.queryByRole('group', { name: /3D scene/ })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /3D models/ })).not.toBeInTheDocument();
+      });
+
+      it('lists the labs of each step with their flags', async () => {
+        await openScene(4);
+        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        expect(screen.getAllByText('Potassium: 6.3 mmol/L (critical)').length).toBeGreaterThan(0);
+      });
+
+      it('shows Scene 5 with its counterfactual labs per step and the interactive panel in the last', async () => {
+        await openScene(5);
+        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        expect(screen.getByText('Uric acid: 3.4 mg/dL (normal)')).toBeInTheDocument(); // 5.2 rasburicase
+        const panel = screen.getByRole('region', { name: 'Try interventions' });
+        await userEvent.click(within(panel).getByRole('switch', { name: 'Rasburicase' }));
+        expect(within(panel).getByRole('switch', { name: 'Rasburicase' })).toBeChecked();
+      });
+
+      it('the side menu\'s step links scroll to the step in the text', async () => {
+        await openScene(2);
+        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        const target = document.getElementById('step-2-1')!;
+        const scrollIntoView = vi.fn();
+        target.scrollIntoView = scrollIntoView;
+        const nav = screen.getByRole('navigation', { name: 'Scene navigation' });
+        await userEvent.click(within(nav).getByRole('button', { name: /^2\.2 / }));
+        expect(scrollIntoView).toHaveBeenCalled();
+      });
+
+      it('has no accessibility violations', async () => {
+        const { container } = await openScene(2);
+        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        expect(await axe(container)).toHaveNoViolations();
+      });
     });
   });
 
@@ -489,7 +630,7 @@ describe('App', () => {
 
     it('shows the cascade minimap here for the first time, with the kidney lit', async () => {
       await openScene3AtProgress(0.1);
-      expect(screen.getByRole('img', { name: /Cascade progress minimap/ })).toBeInTheDocument();
+      expect(screen.getByTestId('cascade-minimap')).toBeInTheDocument();
       expect(screen.getByTestId('minimap-kidney')).toHaveAttribute('data-lit', 'true');
     });
 
@@ -567,7 +708,7 @@ describe('App', () => {
 
     it('does not show the cascade minimap yet (it starts in Scene 3)', async () => {
       await openScene2AtProgress(0.9);
-      expect(screen.queryByRole('img', { name: /Cascade progress minimap/ })).not.toBeInTheDocument();
+      expect(screen.queryByTestId('cascade-minimap')).not.toBeInTheDocument();
     });
 
     it('states the 70 mg²/dL² threshold in the step 2.2 Learn more panel', async () => {

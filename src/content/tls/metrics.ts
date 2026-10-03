@@ -4,6 +4,7 @@ import type { DiseaseMetric } from '../schema';
 export const tlsMetrics: DiseaseMetric[] = [
   {
     id: 'K',
+    name: 'Potassium',
     label: 'K⁺',
     unit: 'mmol/L',
     decimalPlaces: 1,
@@ -16,6 +17,7 @@ export const tlsMetrics: DiseaseMetric[] = [
   },
   {
     id: 'Ca',
+    name: 'Calcium',
     label: 'Ca²⁺',
     unit: 'mg/dL',
     decimalPlaces: 1,
@@ -28,6 +30,7 @@ export const tlsMetrics: DiseaseMetric[] = [
   },
   {
     id: 'PO4',
+    name: 'Phosphate',
     label: 'PO₄',
     unit: 'mmol/L',
     decimalPlaces: 1,
@@ -40,6 +43,7 @@ export const tlsMetrics: DiseaseMetric[] = [
   },
   {
     id: 'UA',
+    name: 'Uric acid',
     label: 'UA',
     unit: 'mg/dL',
     decimalPlaces: 1,
@@ -52,6 +56,7 @@ export const tlsMetrics: DiseaseMetric[] = [
   },
   {
     id: 'Cr',
+    name: 'Creatinine',
     label: 'Cr',
     unit: 'mg/dL',
     decimalPlaces: 1,

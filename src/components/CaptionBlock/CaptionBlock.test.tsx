@@ -55,3 +55,13 @@ describe('CaptionBlock', () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 });
+
+describe('CaptionBlock: Escape', () => {
+  it('closes the open Learn more panel', async () => {
+    render(<CaptionBlock sceneTitle="T" caption="C" learnMore={{ heading: 'H', body: 'B', citations: [] }} />);
+    await userEvent.click(screen.getByRole('button', { name: /learn more/i }));
+    expect(screen.getByRole('button', { name: /learn more/i })).toHaveAttribute('aria-expanded', 'true');
+    await userEvent.keyboard('{Escape}');
+    expect(screen.getByRole('button', { name: /learn more/i })).toHaveAttribute('aria-expanded', 'false');
+  });
+});
