@@ -9,6 +9,7 @@ import { ThemeToggle } from './components/ThemeToggle/ThemeToggle';
 import { QualityToggle } from './components/QualityToggle/QualityToggle';
 import { AssetLoadingBar } from './components/AssetLoadingBar/AssetLoadingBar';
 import { useProgress } from '@react-three/drei';
+import { preloadScene } from './assets/useModel';
 import { LabStrip } from './components/LabStrip/LabStrip';
 import { SideNav } from './components/SideNav/SideNav';
 import { ColorLegend } from './components/ColorLegend/ColorLegend';
@@ -77,6 +78,15 @@ export function App() {
   const [legendExpanded, setLegendExpanded] = useState(false);
 
   useRouteSync();
+
+  // Warm the cache for the scene on screen and the next one, so a scroll into it never waits on the network. The
+  // landing screen preloads Scene 0 while the visitor reads it. Changing the quality tier fetches the other files.
+  const preloadFrom = route.kind === 'scene' ? route.index : route.kind === 'landing' ? 0 : null;
+  useEffect(() => {
+    if (preloadFrom === null || !webglSupported) return;
+    preloadScene(tlsContent.models, preloadFrom, modelQuality);
+    preloadScene(tlsContent.models, preloadFrom + 1, modelQuality);
+  }, [preloadFrom, modelQuality, webglSupported]);
 
   // Rail defaults: expanded on desktop, icon rail on tablet (design spec §4.3). The user can still toggle it.
   useEffect(() => {

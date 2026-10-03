@@ -19,7 +19,9 @@ import { stepIndexFromProgress } from '../../lib/steps';
 import { useAppStore } from '../../store/useAppStore';
 import { getTumorMassLayout } from '../shared/tumorMass';
 import { useSceneFraming } from '../shared/useSceneFraming';
+import { ModelBoundary } from '../../assets/ModelBoundary';
 import { RupturingMass } from './RupturingMass';
+import { RupturingModelMass } from './RupturingModelMass';
 
 export interface Scene1Props {
   reducedMotion?: boolean;
@@ -37,8 +39,9 @@ const STEP_COUNT = 3;
 
 /**
  * Scene 1 3D content: the Scene 0 mass, a wavefront sweeping across it, cells deforming and rupturing as it passes,
- * three particle bursts (K⁺ amber, PO₄ cyan, purines violet), then a camera pull-back. Placeholders stand in for
- * s1_cell_rupture.glb's shape keys; the wavefront shader, particle physics and camera path follow the asset spec.
+ * three particle bursts (K⁺ amber, PO₄ cyan, purines violet), then a camera pull-back. Cells come from
+ * s1_cell_rupture.glb (shape keys + tear shader), with placeholders while it loads; the wavefront shader, particle
+ * physics and camera path follow the asset spec.
  * Under reduced motion each step shows a still snapshot instead of animating.
  */
 export function Scene1({ reducedMotion = false, viewShift = 0 }: Scene1Props) {
@@ -73,7 +76,13 @@ export function Scene1({ reducedMotion = false, viewShift = 0 }: Scene1Props) {
 
   return (
     <>
-      <RupturingMass instances={cells} getProgress={getProgress} />
+      {/* Stand-in while the model loads (and if it fails): stretched/swelling icosahedra with the same timing. */}
+      <ModelBoundary
+        fallback={<RupturingMass instances={cells} getProgress={getProgress} />}
+        errorFallback={<RupturingMass instances={cells} getProgress={getProgress} />}
+      >
+        <RupturingModelMass instances={cells} getProgress={getProgress} />
+      </ModelBoundary>
       <Wavefront getX={() => waveX(getProgress())} getOpacity={() => waveOpacity(getProgress())} />
       {SYSTEMS.map((sys) => (
         <ParticleBurst

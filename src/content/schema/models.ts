@@ -10,6 +10,11 @@ export interface ModelEntry {
   high?: string;
   /** Lowest-detail version, used for instanced models on the 'standard' tier. */
   lod?: string;
+  /**
+   * Part names (prefix match), innermost first, for drawing nested translucent meshes back to front
+   * (e.g. nucleus before membrane). Parts not listed draw first.
+   */
+  drawOrder?: string[];
   /** Scenes (route indices) that draw this model, so the next scene's models can be preloaded. */
   scenes: number[];
   /** The ways those scenes use it; preloading fetches only the files these usages resolve to. */

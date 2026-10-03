@@ -1,5 +1,8 @@
 import type { ModelManifest } from '../schema';
 
+/** Inside to outside: the membrane is translucent and wraps everything else, so it draws last. */
+const CELL_DRAW_ORDER = ['nucleoli', 'nucleus', 'vacuoles', 'membrane'];
+
 /**
  * TLS model files (public/models). Only scenes that exist today are listed; later scenes add entries as their
  * models get wired in. `high` points at the HD tier (same file names under models/hd/).
@@ -15,6 +18,7 @@ export const tlsModels: ModelManifest = {
       standard: 's0_cell_base_tex.glb',
       high: 'hd/s0_cell_base.glb',
       lod: 's0_cell_base_lod1.glb',
+      drawOrder: CELL_DRAW_ORDER,
       scenes: [0, 1],
       usages: ['instanced'],
     },
@@ -22,6 +26,7 @@ export const tlsModels: ModelManifest = {
       standard: 's1_cell_rupture.glb',
       high: 'hd/s1_cell_rupture.glb',
       lod: 's1_cell_rupture_lod1.glb',
+      drawOrder: CELL_DRAW_ORDER,
       scenes: [1],
       usages: ['instanced'],
     },

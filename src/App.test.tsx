@@ -18,7 +18,12 @@ import { tlsContent } from './content/tls';
 // re-imported `App` instances (each built on a `vi.resetModules()`-cleared
 // registry) would silently produce two different store singletons.
 
+const preloadScene = vi.fn();
+
 async function setUpApp(webglSupported: boolean) {
+  preloadScene.mockClear();
+  // jsdom can't fetch/decode models; the loader itself is covered in assets/*.test.
+  vi.doMock('./assets/useModel', () => ({ preloadScene, useModel: vi.fn() }));
   if (webglSupported) {
     vi.doMock('./hooks', async (importOriginal) => {
       const actual = await importOriginal<typeof import('./hooks')>();
@@ -36,6 +41,7 @@ async function setUpApp(webglSupported: boolean) {
 describe('App', () => {
   beforeEach(() => {
     window.history.replaceState(null, '', '/');
+    window.localStorage.clear();
     window.innerWidth = 1440;
   });
 
@@ -43,6 +49,7 @@ describe('App', () => {
     vi.resetModules();
     vi.doUnmock('./hooks');
     vi.doUnmock('./engine/ScrollCanvas');
+    vi.doUnmock('./assets/useModel');
     document.documentElement.removeAttribute('data-theme');
   });
 
@@ -121,6 +128,25 @@ describe('App', () => {
       await userEvent.click(screen.getByRole('button', { name: /switch to standard quality/i }));
       expect(useAppStore.getState().modelQuality).toBe('standard');
       expect(screen.getByRole('button', { name: /switch to high quality/i })).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('preloads the models of the current and the next scene, and again when the tier changes', async () => {
+      window.history.replaceState(null, '', '/scene/1');
+      const { App, useAppStore } = await setUpApp(true);
+      render(<App />);
+      // (The very first render still sees the landing route, which preloads 0 and 1 before the deep link applies.)
+      expect(preloadScene.mock.calls.slice(-2).map((c) => [c[1], c[2]])).toEqual([[1, 'high'], [2, 'high']]);
+      preloadScene.mockClear();
+      await act(async () => {
+        useAppStore.getState().setModelQuality('standard');
+      });
+      expect(preloadScene.mock.calls.map((c) => [c[1], c[2]])).toEqual([[1, 'standard'], [2, 'standard']]);
+    });
+
+    it('preloads Scene 0 (and 1) while the landing screen is showing', async () => {
+      const { App } = await setUpApp(true);
+      render(<App />);
+      expect(preloadScene.mock.calls.map((c) => c[1])).toEqual([0, 1]);
     });
 
     it('shows the loading bar only while assets are loading', async () => {
