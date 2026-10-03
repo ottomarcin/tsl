@@ -18,20 +18,59 @@ export function ScrollProgressSync() {
   const jumpToScene = useAppStore((s) => s.jumpToScene);
   const setSceneProgress = useAppStore((s) => s.setSceneProgress);
   const lastScene = useRef(-1);
+  // R3F can run a frame before this component's effects flush; until the scroll API is registered (and the current
+  // route applied to it) the scroll offset is meaningless and must not be written back to the route.
+  const ready = useRef(false);
+  // A jump requested before the scroll proxy has layout (deep links mount the canvas and ask for a page in the same
+  // commit, while scrollHeight is still 0) is parked here and applied once the proxy is scrollable.
+  const pendingPage = useRef<number | null>(null);
+  // After applying a jump, ignore the offset until the (damped) scroll catches up with the target page, so the stale
+  // value can't undo the jump. Capped so a failed scroll can never freeze the sync.
+  const settling = useRef<{ page: number; frames: number } | null>(null);
 
   useEffect(() => {
     registerScrollApi({
       scrollToPage: (page: number) => {
         const el = scroll.el;
         const max = el.scrollHeight - el.clientHeight;
-        el.scrollTop = max > 0 ? (page / SCENE_COUNT) * max : 0;
+        if (max > 0) {
+          el.scrollTop = (page / SCENE_COUNT) * max;
+          pendingPage.current = null;
+          settling.current = { page, frames: 180 };
+        } else {
+          pendingPage.current = page;
+        }
       },
     });
-    return () => registerScrollApi(null);
+    ready.current = true;
+    return () => {
+      ready.current = false;
+      registerScrollApi(null);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useFrame(() => {
+    if (!ready.current) return;
+    if (pendingPage.current !== null) {
+      const el = scroll.el;
+      const max = el.scrollHeight - el.clientHeight;
+      if (max <= 0) return;
+      el.scrollTop = (pendingPage.current / SCENE_COUNT) * max;
+      lastScene.current = pendingPage.current;
+      pendingPage.current = null;
+      settling.current = { page: lastScene.current, frames: 180 };
+      return;
+    }
+    if (settling.current) {
+      const { page, frames } = settling.current;
+      const reached = Math.min(SCENE_COUNT - 1, Math.floor(scroll.offset * SCENE_COUNT)) === page;
+      if (reached || frames <= 1) settling.current = null;
+      else {
+        settling.current = { page, frames: frames - 1 };
+        return;
+      }
+    }
     const globalOffset = scroll.offset;
     const sceneIndex = Math.min(SCENE_COUNT - 1, Math.floor(globalOffset * SCENE_COUNT));
     const local = scroll.range(sceneIndex / SCENE_COUNT, 1 / SCENE_COUNT);

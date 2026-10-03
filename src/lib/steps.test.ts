@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { latestTimestamp, stepIndexFromProgress } from './steps';
+import { labValuesAt, latestTimestamp, stepIndexFromProgress } from './steps';
 
 describe('stepIndexFromProgress', () => {
   it('splits progress into equal bands', () => {
@@ -31,5 +31,32 @@ describe('latestTimestamp', () => {
   });
   it('returns undefined when none exist', () => {
     expect(latestTimestamp([{ id: 'x', order: 1, caption: '' }], 0)).toBeUndefined();
+  });
+});
+
+describe('labValuesAt', () => {
+  const scenes = [
+    { id: 's0', index: 0, title: '', steps: [
+      { id: 'a', order: 1, caption: '', labValues: [{ metricId: 'K', value: 4.2 }, { metricId: 'Ca', value: 9.4 }] },
+      { id: 'b', order: 2, caption: '' },
+    ] },
+    { id: 's1', index: 1, title: '', steps: [
+      { id: 'c', order: 1, caption: '', labValues: [{ metricId: 'K', value: 4.6 }] },
+      { id: 'd', order: 2, caption: '', labValues: [{ metricId: 'K', value: 5.5 }, { metricId: 'PO4', value: 5.5 }] },
+      { id: 'e', order: 3, caption: '' },
+    ] },
+  ];
+  it('applies targets cumulatively through the current step', () => {
+    expect(labValuesAt(scenes, 1, 0)).toEqual({ K: 4.6, Ca: 9.4 });
+    expect(labValuesAt(scenes, 1, 1)).toEqual({ K: 5.5, Ca: 9.4, PO4: 5.5 });
+  });
+  it('keeps earlier values on steps that set none (skipping straight to the last step)', () => {
+    expect(labValuesAt(scenes, 1, 2)).toEqual({ K: 5.5, Ca: 9.4, PO4: 5.5 });
+  });
+  it('includes all steps of earlier scenes and nothing from later ones', () => {
+    expect(labValuesAt(scenes, 0, 1)).toEqual({ K: 4.2, Ca: 9.4 });
+  });
+  it('tolerates out-of-range indices', () => {
+    expect(labValuesAt(scenes, 9, 9)).toEqual({ K: 5.5, Ca: 9.4, PO4: 5.5 });
   });
 });

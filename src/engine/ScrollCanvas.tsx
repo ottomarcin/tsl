@@ -3,6 +3,7 @@ import { ScrollControls } from '@react-three/drei';
 import { ScrollProgressSync } from './ScrollProgressSync';
 import { DevPlaceholderMesh } from './DevPlaceholderMesh';
 import { Scene0 } from '../scenes/Scene0/Scene0';
+import { Scene1 } from '../scenes/Scene1/Scene1';
 import { useAppStore } from '../store/useAppStore';
 import { SCENE_COUNT } from '../store/types';
 
@@ -10,7 +11,8 @@ function SceneContent({ viewShift }: { viewShift: number }) {
   const route = useAppStore((s) => s.route);
   const reducedMotion = useAppStore((s) => s.reducedMotion);
   if (route.kind === 'scene' && route.index === 0) return <Scene0 reducedMotion={reducedMotion} viewShift={viewShift} />;
-  // Scenes 1–5 have no 3D content yet (Epics 4–8).
+  if (route.kind === 'scene' && route.index === 1) return <Scene1 reducedMotion={reducedMotion} viewShift={viewShift} />;
+  // Scenes 2–5 have no 3D content yet (Epics 5–8).
   return <DevPlaceholderMesh />;
 }
 

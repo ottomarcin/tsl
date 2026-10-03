@@ -13,7 +13,7 @@ import { CascadeMinimap } from './components/CascadeMinimap/CascadeMinimap';
 import { CaptionBlock } from './components/CaptionBlock/CaptionBlock';
 import { ChipCluster, type ChipClusterPhase } from './components/ChipCluster/ChipCluster';
 import { HighRiskBadge } from './components/HighRiskBadge/HighRiskBadge';
-import { latestTimestamp, stepIndexFromProgress } from './lib/steps';
+import { labValuesAt, latestTimestamp, stepIndexFromProgress } from './lib/steps';
 import { FirstRunScrollHint } from './components/FirstRunScrollHint/FirstRunScrollHint';
 import styles from './App.module.css';
 
@@ -87,11 +87,12 @@ export function App() {
   const stepIndex = activeScene ? stepIndexFromProgress(sceneProgress, activeScene.steps.length) : 0;
   const activeStep = activeScene?.steps[stepIndex];
 
-  // Lab values follow the active scroll step; metrics a step doesn't list keep their prior value.
+  // Lab values follow the story position: all targets up to the active step, so deep links and skipped steps stay correct.
+  const activeSceneIndex = activeScene?.index;
   useEffect(() => {
-    if (!activeStep?.labValues) return;
-    setLabValues(Object.fromEntries(activeStep.labValues.map((v) => [v.metricId, v.value])));
-  }, [activeStep, setLabValues]);
+    if (activeSceneIndex === undefined) return;
+    setLabValues(labValuesAt(tlsContent.scenes, activeSceneIndex, stepIndex));
+  }, [activeSceneIndex, stepIndex, setLabValues]);
 
   if (!webglSupported) {
     return (

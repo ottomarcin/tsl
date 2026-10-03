@@ -143,6 +143,57 @@ describe('App', () => {
     });
   });
 
+  describe('Scene 1 step bindings', () => {
+    async function openScene1AtProgress(progress: number) {
+      window.history.replaceState(null, '', '/scene/1');
+      const { App, useAppStore } = await setUpApp(true);
+      const utils = render(<App />);
+      await act(async () => {
+        useAppStore.getState().setSceneProgress(progress);
+      });
+      return { ...utils, useAppStore };
+    }
+    const steps = tlsContent.scenes[1].steps;
+
+    it('step 1.1: K⁺ ticks up to 4.6 at T+6h, no chips or badge', async () => {
+      const { useAppStore } = await openScene1AtProgress(0.1);
+      expect(screen.getByText(steps[0].caption)).toBeInTheDocument();
+      expect(useAppStore.getState().labValues.K).toBe(4.6);
+      expect(screen.getAllByText('T+6h').length).toBeGreaterThan(0);
+      expect(screen.queryByTestId('chip-slot-ldh')).not.toBeInTheDocument();
+    });
+
+    it('step 1.2: K⁺, PO₄ and uric acid jump at T+12h', async () => {
+      const { useAppStore } = await openScene1AtProgress(0.5);
+      expect(screen.getByText(steps[1].caption)).toBeInTheDocument();
+      expect(useAppStore.getState().labValues).toMatchObject({ K: 5.5, PO4: 5.5, UA: 7.8 });
+      expect(screen.getAllByText('T+12h').length).toBeGreaterThan(0);
+    });
+
+    it('step 1.3: keeps the step 1.2 values and timestamp (labs continue, nothing is reset)', async () => {
+      const { useAppStore } = await openScene1AtProgress(0.9);
+      expect(screen.getByText(steps[2].caption)).toBeInTheDocument();
+      expect(useAppStore.getState().labValues).toMatchObject({ K: 5.5, PO4: 5.5, UA: 7.8 });
+      expect(screen.getAllByText('T+12h').length).toBeGreaterThan(0);
+    });
+
+    it('shows the Learn more content of the active step with its citations', async () => {
+      await openScene1AtProgress(0.5);
+      await userEvent.click(screen.getByRole('button', { name: /learn more/i }));
+      expect(screen.getByText(steps[1].learnMore!.heading)).toBeVisible();
+      expect(screen.getByText(/Sources for this step/i)).toBeVisible();
+    });
+
+    it('has no accessibility violations at any step', async () => {
+      for (const p of [0.1, 0.5, 0.9]) {
+        const { container, unmount } = await openScene1AtProgress(p);
+        expect(await axe(container)).toHaveNoViolations();
+        unmount();
+        vi.resetModules();
+      }
+    });
+  });
+
   describe('Scene 0 step bindings', () => {
     async function openScene0AtProgress(progress: number) {
       window.history.replaceState(null, '', '/scene/0');
