@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import { Check, ChevronsLeft, ChevronsRight, Circle } from 'lucide-react';
 import { Modal } from '../Modal/Modal';
 import styles from './SideNav.module.css';
@@ -18,6 +20,19 @@ export interface SideNavSceneItem {
   subSteps?: SideNavSubStep[];
 }
 
+/** A switch that belongs to the app rather than to the story (text-only mode, the quality of the 3D models). */
+export interface SideNavSetting {
+  id: string;
+  label: string;
+  /** What it does, in a sentence: the tooltip. */
+  description: string;
+  /** The current setting in a word ("On", "High"), shown beside the label. */
+  value: string;
+  pressed: boolean;
+  icon: ReactNode;
+  onToggle: () => void;
+}
+
 export interface SideNavProps {
   scenes: SideNavSceneItem[];
   /** -1 = landing, scenes.length = end card. */
@@ -31,6 +46,11 @@ export interface SideNavProps {
   currentStepIndex?: number;
   /** Jump to a step of the current scene. When omitted the steps are shown but not clickable. */
   onJumpToStep?: (sceneIndex: number, stepIndex: number) => void;
+  /** App-level switches, at the bottom of the menu: labelled when it is open, icons with tooltips when it is collapsed. */
+  settings?: SideNavSetting[];
+  /** The project's name: written out when the menu is open, abbreviated when it is collapsed or a sheet. */
+  projectName?: string;
+  projectAbbreviation?: string;
   variant?: 'rail' | 'sheet';
   sheetOpen?: boolean;
   onSheetOpenChange?: (open: boolean) => void;
@@ -42,6 +62,47 @@ function itemIcon(state: ItemState) {
   if (state === 'completed') return <Check size={16} className={styles.iconCompleted} />;
   if (state === 'current') return <Circle size={16} className={styles.iconCurrent} fill="currentColor" />;
   return <Circle size={16} className={styles.iconFuture} />;
+}
+
+function Settings({ settings, labelled }: { settings: SideNavSetting[]; labelled: boolean }) {
+  if (settings.length === 0) return null;
+  return (
+    <Tooltip.Provider delayDuration={300}>
+      <ul className={styles.settings} aria-label="Settings">
+        {settings.map((setting) => (
+          <li key={setting.id}>
+            <Tooltip.Root>
+              <Tooltip.Trigger asChild>
+                <button
+                  type="button"
+                  className={[styles.setting, labelled ? '' : styles.settingIconOnly].join(' ')}
+                  aria-pressed={setting.pressed}
+                  aria-label={`${setting.label}: ${setting.value}`}
+                  onClick={setting.onToggle}
+                >
+                  <span className={styles.settingIcon} aria-hidden="true">
+                    {setting.icon}
+                  </span>
+                  {labelled && (
+                    <>
+                      <span className={styles.settingLabel}>{setting.label}</span>
+                      <span className={styles.settingValue}>{setting.value}</span>
+                    </>
+                  )}
+                </button>
+              </Tooltip.Trigger>
+              <Tooltip.Portal>
+                <Tooltip.Content className={styles.tooltip} side="right" sideOffset={8}>
+                  <strong>{setting.label}</strong>
+                  <span>{setting.description}</span>
+                </Tooltip.Content>
+              </Tooltip.Portal>
+            </Tooltip.Root>
+          </li>
+        ))}
+      </ul>
+    </Tooltip.Provider>
+  );
 }
 
 function SideNavContent({
@@ -141,10 +202,13 @@ export function SideNav({
   variant = 'rail',
   sheetOpen = false,
   onSheetOpenChange,
+  settings = [],
+  projectName = 'Tumor lysis syndrome',
+  projectAbbreviation = 'TLS',
 }: SideNavProps) {
   if (variant === 'sheet') {
     return (
-      <Modal open={sheetOpen} onOpenChange={onSheetOpenChange ?? (() => {})} title="Navigate" variant="sheet">
+      <Modal open={sheetOpen} onOpenChange={onSheetOpenChange ?? (() => {})} title={projectAbbreviation} variant="sheet">
         <SideNavContent
           scenes={scenes}
           currentSceneIndex={currentSceneIndex}
@@ -154,13 +218,16 @@ export function SideNav({
           onJumpToEnd={onJumpToEnd}
           onJumpToStep={onJumpToStep}
         />
+        <Settings settings={settings} labelled />
       </Modal>
     );
   }
 
   return (
     <nav className={[styles.rail, expanded ? styles.expanded : styles.collapsed].join(' ')} aria-label="Scene navigation">
-      <div className={styles.projectLabel}>{expanded ? 'TLS' : 'T'}</div>
+      <div className={styles.projectLabel} title={projectName}>
+        {expanded ? projectName : projectAbbreviation}
+      </div>
       {expanded && (
         <SideNavContent
           scenes={scenes}
@@ -172,6 +239,7 @@ export function SideNav({
           onJumpToStep={onJumpToStep}
         />
       )}
+      <Settings settings={settings} labelled={expanded} />
       <button
         type="button"
         className={styles.collapseButton}

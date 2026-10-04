@@ -38,15 +38,31 @@
 .minimapFloating {
   position: absolute;
   top: 24px;
-  /* Clear of the three toggles (text-only, quality, theme) at the top right. */
-  right: 148px;
+  right: 24px;
   z-index: var(--z-persistent-ui);
+}
+
+.topStack {
+  position: absolute;
+  top: var(--space-4);
+  left: var(--space-8);
+  z-index: var(--z-persistent-ui);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  width: 420px;
+  max-width: calc(100% - 2 * var(--space-8));
+  pointer-events: none;
+}
+
+.topStack > * {
+  pointer-events: auto;
 }
 
 .bottomStack {
   position: absolute;
   left: var(--space-8);
-  right: var(--space-8);
   bottom: var(--space-4);
   z-index: var(--z-persistent-ui);
   display: flex;
@@ -58,6 +74,13 @@
 
 .bottomStack > * {
   pointer-events: auto;
+}
+
+.stepNav {
+  position: absolute;
+  right: var(--space-8);
+  bottom: var(--space-4);
+  z-index: var(--z-persistent-ui);
 }
 
 .menuButton {
@@ -88,10 +111,7 @@
 }
 
 @media (max-height: 560px) and (min-width: 768px) {
-  .bottomStack {
-    right: auto;
-    top: var(--space-4);
-    bottom: auto;
+  .topStack {
     width: 38%;
     max-height: calc(100% - 2 * var(--space-4));
     overflow-y: auto;
@@ -99,8 +119,20 @@
 }
 
 @media (max-width: 767px) {
+  /* Under the top bar (menu button, theme toggle), across the width. */
+  .topStack {
+    top: 72px;
+    left: var(--space-4);
+    right: var(--space-4);
+    width: auto;
+    max-width: none;
+  }
+
   .bottomStack {
     left: var(--space-4);
+  }
+
+  .stepNav {
     right: var(--space-4);
   }
 
@@ -142,26 +174,18 @@
 
 .modeToggleFloating {
   position: absolute;
-  top: var(--space-4);
-  /* Left of the minimap (top right), which is 180px wide plus the toggles' margin. */
-  right: 380px;
+  bottom: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
   z-index: var(--z-persistent-ui);
   width: max-content;
-  max-width: calc(100% - 380px - var(--space-4));
+  /* Between the legend (left) and the step buttons (right). */
+  max-width: calc(100% - 2 * (var(--space-8) + 220px));
 }
 
-/* Not enough room beside the minimap: it is hidden below desktop width (Epic 11 turns it into an icon that opens it)
-   and the toggle sits under the header row instead. */
+/* Not enough room beside the story: the minimap is hidden below desktop width (a button at the top right opens it). */
 @media (max-width: 1279px) {
   .minimapFloating {
     display: none;
-  }
-
-  .modeToggleFloating {
-    top: 72px;
-    left: var(--space-4);
-    right: var(--space-4);
-    width: auto;
-    max-width: none;
   }
 }

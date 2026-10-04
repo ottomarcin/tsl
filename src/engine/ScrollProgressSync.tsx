@@ -41,6 +41,11 @@ export function ScrollProgressSync() {
   };
 
   useEffect(() => {
+    // Where in the story the viewer is (0–1), kept so a resize can put the scroll back. A jump updates it at once: the
+    // layout can change right after one (leaving the end card gives the scene back its full height), and the resize
+    // handling would otherwise restore the position from before the jump.
+    let fraction = 0;
+    let height = scroll.el.clientHeight;
     // Horizontal drags (the Scene 1 wavefront) must reach the pointer handlers; only vertical pans scroll natively.
     scroll.el.style.touchAction = 'pan-y';
     scroll.el.setAttribute('data-scroll-proxy', '');
@@ -53,6 +58,7 @@ export function ScrollProgressSync() {
         const max = el.scrollHeight - el.clientHeight;
         if (max <= 0) return;
         const offset = (page + progress) / SCENE_COUNT;
+        fraction = offset;
         if (smooth) {
           stopAnimation.current();
           stopAnimation.current = smoothScrollTo(el, offset * max);
@@ -67,6 +73,7 @@ export function ScrollProgressSync() {
         const max = el.scrollHeight - el.clientHeight;
         if (max > 0) {
           const offset = (page + progress) / SCENE_COUNT;
+          fraction = offset;
           stopAnimation.current();
           if (smooth) stopAnimation.current = smoothScrollTo(el, offset * max);
           else {
@@ -76,6 +83,7 @@ export function ScrollProgressSync() {
           pendingPage.current = null;
           settling.current = { page, frames: 180 };
         } else {
+          fraction = (page + progress) / SCENE_COUNT;
           pendingPage.current = { page, progress };
         }
       },
@@ -83,8 +91,6 @@ export function ScrollProgressSync() {
     // Rotating the phone (or resizing the window) changes the proxy's height, and the browser keeps the scroll in pixels:
     // the story would jump. Remember where in the story the viewer is, and put the scroll back there after a resize.
     const el = scroll.el;
-    let fraction = 0;
-    let height = el.clientHeight;
     const maxScroll = () => el.scrollHeight - el.clientHeight;
     const onScroll = () => {
       // Scrolls caused by the resize itself (clamping to the new height) come before the observer fires: ignore them.

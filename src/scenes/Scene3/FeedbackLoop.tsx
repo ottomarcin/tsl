@@ -23,9 +23,9 @@ export interface FeedbackLoopProps extends Scene3Getters {
  */
 const LOOP: Vec3[] = [
   [-0.6, -1.0, 0],
-  [-1.3, -1.9, 0],
-  [-0.9, -3.0, 0],
-  [0.6, -3.45, 0],
+  [-1.3, -1.6, 0],
+  [-0.9, -2.1, 0],
+  [0.6, -2.45, 0],
 ];
 const RED = new Color(token('--flag-red'));
 
@@ -77,7 +77,8 @@ export function FeedbackLoop({ color, blend, caption, getProgress, getPresence, 
         <primitive object={root} />
       </group>
       <ScenePointLabel
-        position={[2.7, -3.45, 0]}
+        position={[1.0, -2.45, 0]}
+        align="start"
         text={caption}
         color="var(--flag-red)"
         large

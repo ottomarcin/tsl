@@ -1,16 +1,14 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useAppStore } from './store/useAppStore';
 import { useMediaQuery, useBreakpoint, useFirstRunHint, useReducedMotion, useRouteSync, useWebGLSupport, useAnnouncements, useDocumentVisible, useGlobalErrors, useLoadTimeout, usePrinting } from './hooks';
-import { Menu } from 'lucide-react';
+import { Accessibility, Menu, Moon, Sparkles, Sun, Zap } from 'lucide-react';
 
 import { tlsContent } from './content/tls';
 import { LandingScreen } from './components/LandingScreen/LandingScreen';
-import { ThemeToggle } from './components/ThemeToggle/ThemeToggle';
-import { QualityToggle } from './components/QualityToggle/QualityToggle';
 import { AssetLoadingBar } from './components/AssetLoadingBar/AssetLoadingBar';
 import { preloadScene } from './assets/preload';
 import { LabStrip } from './components/LabStrip/LabStrip';
-import { SideNav } from './components/SideNav/SideNav';
+import { SideNav, type SideNavSetting } from './components/SideNav/SideNav';
 import { ColorLegend } from './components/ColorLegend/ColorLegend';
 import { CascadeMinimap } from './components/CascadeMinimap/CascadeMinimap';
 import { CaptionBlock } from './components/CaptionBlock/CaptionBlock';
@@ -32,7 +30,8 @@ import { MinimapToggle } from './components/MinimapToggle/MinimapToggle';
 import { LegendRows } from './components/ColorLegend/LegendRows';
 import { Modal } from './components/Modal/Modal';
 import { SkipLink } from './components/SkipLink/SkipLink';
-import { AccessibilityToggle } from './components/AccessibilityToggle/AccessibilityToggle';
+import { Breadcrumb, type BreadcrumbItem } from './components/Breadcrumb/Breadcrumb';
+import { StepNav } from './components/StepNav/StepNav';
 import { TextOnlyScene } from './scenes/TextOnly/TextOnlyScene';
 import { textStepId } from './components/TextOnlyView/TextOnlyView';
 import { pageTitle } from './lib/announce';
@@ -251,6 +250,67 @@ export function App() {
   const badgeVisible = scene?.summaryStep !== undefined && stepOrder >= scene.summaryStep;
   const minimapHighlight = minimapHighlightFor(sceneIndex);
 
+  // App-level switches, in the menu (design: out of the top-right corner, where nothing said what they were).
+  const settings: SideNavSetting[] = [
+    {
+      id: 'text-only',
+      label: 'Text-only mode',
+      description: 'All the content as text, without the 3D scene.',
+      value: textOnly ? 'On' : 'Off',
+      pressed: textOnly,
+      icon: <Accessibility size={18} />,
+      onToggle: toggleTextOnly,
+    },
+    {
+      id: 'theme',
+      label: 'Colour theme',
+      description: 'Switch between the dark and the light look.',
+      value: theme === 'dark' ? 'Dark' : 'Light',
+      pressed: theme === 'dark',
+      icon: theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />,
+      onToggle: toggleTheme,
+    },
+    ...(textOnly
+      ? []
+      : [
+          {
+            id: 'quality',
+            label: '3D model quality',
+            description: 'High uses the detailed models; standard is lighter and runs better on a slower machine.',
+            value: modelQuality === 'high' ? 'High' : 'Standard',
+            pressed: modelQuality === 'high',
+            icon: modelQuality === 'high' ? <Sparkles size={18} /> : <Zap size={18} />,
+            onToggle: toggleModelQuality,
+          },
+        ]),
+  ];
+
+  // Where the viewer is, and where the buttons at the bottom right go.
+  const breadcrumb: BreadcrumbItem[] =
+    scene && activeStep && !isEnd
+      ? [
+          { marker: String(scene.index), label: scene.title, onSelect: () => jumpToStep(scene.index, 0, scene.steps.length) },
+          { marker: `${scene.index}.${activeStep.order}`, label: activeStep.title ?? activeStep.caption },
+        ]
+      : [];
+  const stepTarget = (direction: -1 | 1) => {
+    if (!scene) return null;
+    const to = adjacentStep(tlsContent.scenes, sceneIndex, stepIndex, direction);
+    if (to) {
+      const step = tlsContent.scenes[to.scene].steps[to.step];
+      return { to, label: step.title ?? step.caption, marker: `${to.scene}.${step.order}` };
+    }
+    // After the last step comes the end card.
+    return direction === 1 ? { to: null, label: 'End card', marker: undefined } : null;
+  };
+  const previousStep = stepTarget(-1);
+  const nextStep = stepTarget(1);
+  const goTo = (target: ReturnType<typeof stepTarget>) => {
+    if (!target) return;
+    if (target.to) jumpToStep(target.to.scene, target.to.step, tlsContent.scenes[target.to.scene].steps.length);
+    else goToEnd();
+  };
+
   return (
     <div className={styles.sceneLayout} data-testid="app-shell">
       <SkipLink targetId="main-content">Skip to content</SkipLink>
@@ -279,6 +339,7 @@ export function App() {
           setNavSheetOpen(false);
           goToEnd();
         }}
+        settings={settings}
         variant={isMobile ? 'sheet' : 'rail'}
         sheetOpen={navSheetOpen}
         onSheetOpenChange={setNavSheetOpen}
@@ -298,12 +359,11 @@ export function App() {
             <Menu size={20} aria-hidden="true" />
           </button>
         )}
-        <div className={styles.themeToggleFloating}>
-          {minimapHighlight && !textOnly && breakpoint !== 'desktop' && <MinimapToggle onClick={() => setMinimapOpen(true)} />}
-          <AccessibilityToggle textOnly={textOnly} onToggle={toggleTextOnly} />
-          {!textOnly && <QualityToggle quality={modelQuality} onToggle={toggleModelQuality} />}
-          <ThemeToggle theme={theme} onToggle={toggleTheme} />
-        </div>
+        {minimapHighlight && !textOnly && breakpoint !== 'desktop' && (
+          <div className={styles.themeToggleFloating}>
+            <MinimapToggle onClick={() => setMinimapOpen(true)} />
+          </div>
+        )}
         {minimapHighlight && !textOnly && (
           <div className={styles.minimapFloating}>
             <CascadeMinimap
@@ -341,7 +401,7 @@ export function App() {
           >
             <CanvasBoundary onTextOnly={toggleTextOnly}>
             <Suspense fallback={null}>
-              <ScrollCanvas viewShift={shortViewport && !isMobile ? 0.22 : 0} paused={!pageVisible} />
+              <ScrollCanvas viewShift={shortViewport && !isMobile ? 0.22 : 0} viewShiftY={isMobile ? 0.1 : 0} paused={!pageVisible} />
             </Suspense>
           </CanvasBoundary>
             {scene?.chips && <ChipCluster chips={scene.chips} phase={chipPhase} reducedMotion={reducedMotion} layout={isMobile ? 'column' : 'ring'} shifted={shortViewport && !isMobile} />}
@@ -355,18 +415,34 @@ export function App() {
                 />
               </div>
             )}
-            {toggleShown && toggle && scene && (
+            {!isMobile && toggleShown && toggle && scene && (
               <div className={styles.modeToggleFloating}>
                 <ModeToggle toggle={toggle} value={modeSelection[scene.id] ?? toggle.defaultId} onChange={(id) => setMode(scene.id, id)} />
               </div>
             )}
             {sceneIndex === SCENE5_INDEX && !isEnd && <Scene5Controls stepIndex={stepIndex} asSheet={isMobile || shortViewport} />}
-            <div className={styles.bottomStack}>
+            <div className={styles.topStack}>
+              <Breadcrumb items={breadcrumb} />
               {scene && activeStep && (
                 <CaptionBlock key={activeStep.id} sceneTitle={scene.title} caption={activeStep.caption} learnMore={activeStep.learnMore} />
               )}
+              {isMobile && toggleShown && toggle && scene && (
+                <ModeToggle toggle={toggle} value={modeSelection[scene.id] ?? toggle.defaultId} onChange={(id) => setMode(scene.id, id)} />
+              )}
+            </div>
+            <div className={styles.bottomStack}>
               {!isEnd && !isMobile && <ColorLegend items={LEGEND_ITEMS} expanded={legendExpanded} onToggleExpanded={() => setLegendExpanded((e) => !e)} />}
             </div>
+            {!isEnd && (
+              <div className={styles.stepNav}>
+                <StepNav
+                  previous={previousStep && { marker: previousStep.marker, label: previousStep.label }}
+                  next={nextStep && { marker: nextStep.marker, label: nextStep.label }}
+                  onPrevious={() => goTo(previousStep)}
+                  onNext={() => goTo(nextStep)}
+                />
+              </div>
+            )}
           </div>
         )}
         {!isEnd && !textOnly && (

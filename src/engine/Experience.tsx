@@ -19,6 +19,8 @@ const PANEL_SHIFT = 0.17;
 
 export interface ExperienceProps {
   viewShift?: number;
+  /** Fraction of the canvas height the picture moves down, to clear a caption on top. */
+  viewShiftY?: number;
 }
 
 /**
@@ -27,7 +29,7 @@ export interface ExperienceProps {
  * follows the global timeline `g` from the scroll position, under one camera path. That is what removes the cuts:
  * the same cells run through Scenes 0 and 1, and Scene 1's particles fly up to become Scene 2's source cloud.
  */
-export function Experience({ viewShift = 0 }: ExperienceProps) {
+export function Experience({ viewShift = 0, viewShiftY = 0 }: ExperienceProps) {
   const camera = useThree((s) => s.camera);
   const aspect = useThree((s) => s.size.width / Math.max(1, s.size.height));
   const route = useAppStore((s) => s.route);
@@ -35,7 +37,7 @@ export function Experience({ viewShift = 0 }: ExperienceProps) {
   const getG = useGetG(reducedMotion);
   // In free play (step 5.6) the intervention panel takes the right edge; the picture moves aside to stay clear of it.
   const panelOpen = useCallback(() => aspect >= 1.2 && getG() >= 5 && scene5Step(getG()) === FREE_PLAY_STEP && useAppStore.getState().route.kind === 'scene', [aspect, getG]);
-  useViewShift(viewShift, () => (panelOpen() ? -PANEL_SHIFT : 0));
+  useViewShift(viewShift, () => (panelOpen() ? -PANEL_SHIFT : 0), viewShiftY);
 
   const framing = useMemo<CameraContext>(
     () => ({
@@ -46,9 +48,9 @@ export function Experience({ viewShift = 0 }: ExperienceProps) {
       systemicDistance: cameraDistanceForExtent(aspect, SYSTEMIC_LAYOUTS[layoutForAspect(aspect)].extent),
       systemicTargetY: SCENE4_OFFSET[1] + SYSTEMIC_LAYOUTS[layoutForAspect(aspect)].lookAtDy,
       // "Slightly closer" than the full framing only where the mass still fits; narrow or shifted layouts keep it.
-      keepFullFraming: aspect < 1.2 || viewShift > 0,
+      keepFullFraming: aspect < 1.2 || viewShift > 0 || viewShiftY > 0,
     }),
-    [aspect, viewShift],
+    [aspect, viewShift, viewShiftY],
   );
 
   const place = () => {

@@ -23,9 +23,10 @@ export function cameraDistanceForExtent(aspect: number, { halfWidth, halfHeight 
 
 /**
  * Applies the screen-shift for layouts with a left caption column (the image moves right by this fraction of the
- * canvas width). Resets on unmount so nothing later inherits it.
+ * canvas width), and for layouts with a caption on top (the image moves down by `viewShiftY` of the canvas height).
+ * Resets on unmount so nothing later inherits it.
  */
-export function useViewShift(viewShift: number, getExtra?: () => number): void {
+export function useViewShift(viewShift: number, getExtra?: () => number, viewShiftY = 0): void {
   const camera = useThree((s) => s.camera);
   const width = useThree((s) => s.size.width);
   const height = useThree((s) => s.size.height);
@@ -37,19 +38,19 @@ export function useViewShift(viewShift: number, getExtra?: () => number): void {
     if (Math.abs(target - extra.current) < 1e-4) return;
     extra.current += (target - extra.current) * Math.min(1, delta * 5);
     const total = viewShift + extra.current;
-    if (Math.abs(total) < 1e-4) camera.clearViewOffset();
-    else camera.setViewOffset(width, height, -total * width, 0, width, height);
+    if (Math.abs(total) < 1e-4 && !viewShiftY) camera.clearViewOffset();
+    else camera.setViewOffset(width, height, -total * width, -viewShiftY * height, width, height);
     camera.updateProjectionMatrix();
   });
 
   useEffect(() => {
     const total = viewShift + extra.current;
-    if (total) camera.setViewOffset(width, height, -total * width, 0, width, height);
+    if (total || viewShiftY) camera.setViewOffset(width, height, -total * width, -viewShiftY * height, width, height);
     else camera.clearViewOffset();
     camera.updateProjectionMatrix();
     return () => {
       camera.clearViewOffset();
       camera.updateProjectionMatrix();
     };
-  }, [camera, width, height, viewShift]);
+  }, [camera, width, height, viewShift, viewShiftY]);
 }

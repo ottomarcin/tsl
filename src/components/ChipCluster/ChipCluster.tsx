@@ -22,27 +22,27 @@ const CENTRE = { x: 50, y: 52 };
 const SHIFTED_RADIUS_X = 26;
 
 /**
- * The part of the layer the caption block and the legend cover (lower left), as percentages of the layer: no chip may
- * sit in it, or it is hidden behind them.
+ * The part of the layer the breadcrumb and the caption block cover (upper left), and the legend (lower left), as
+ * percentages of the layer: no chip may sit in them, or it is hidden behind them.
  */
-export const CAPTION_ZONE = { maxX: 40, minY: 62 } as const;
+export const CAPTION_ZONE = { maxX: 40, maxY: 34, legendMinY: 84 } as const;
 
 /**
- * Evenly spaced positions along an arc of an ellipse around the centre: from the left, over the top, to the bottom
- * centre. The lower-left part of the ring is left out because that is where the caption sits.
+ * Evenly spaced positions along an arc of an ellipse around the centre: from the top, clockwise round the right side and
+ * the bottom, to the left. The upper-left part of the ring is left out because that is where the caption sits.
  */
 export function chipAnchor(index: number, count: number, radiusX = 36): { x: number; y: number } {
-  const from = (-165 * Math.PI) / 180;
-  const to = (85 * Math.PI) / 180;
+  const from = (-100 * Math.PI) / 180;
+  const to = (170 * Math.PI) / 180;
   const angle = count > 1 ? from + (index / (count - 1)) * (to - from) : -Math.PI / 2;
   return { x: CENTRE.x + Math.cos(angle) * radiusX, y: CENTRE.y + Math.sin(angle) * 32 };
 }
 
 /** Single centred column in the upper part of the layer, clear of the caption block below. */
 export function chipColumnAnchor(index: number, count: number): { x: number; y: number } {
-  // Starts below the top-right toggles (44px) even on a 320px-wide phone.
-  const top = 13;
-  const bottom = 58;
+  // Starts below the breadcrumb and the caption at the top (a few lines on a narrow phone), above the lab strip.
+  const top = 36;
+  const bottom = 70;
   return { x: 50, y: count > 1 ? top + (index / (count - 1)) * (bottom - top) : top };
 }
 

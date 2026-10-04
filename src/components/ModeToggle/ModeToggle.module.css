@@ -87,3 +87,10 @@
     height: 44px;
   }
 }
+
+.title {
+  font-size: var(--text-caption, 12px);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}

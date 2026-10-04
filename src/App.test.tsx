@@ -205,14 +205,14 @@ describe('App', () => {
   });
 
   describe('model quality toggle', () => {
-    it('switches the store between high and standard quality from the scene chrome', async () => {
+    it('switches the store between high and standard quality from the menu', async () => {
       window.history.replaceState(null, '', '/scene/0');
       const { App, useAppStore } = await setUpApp(true);
       render(<App />);
       expect(useAppStore.getState().modelQuality).toBe('high');
-      await userEvent.click(screen.getByRole('button', { name: /switch to standard quality/i }));
+      await userEvent.click(screen.getByRole('button', { name: '3D model quality: High' }));
       expect(useAppStore.getState().modelQuality).toBe('standard');
-      expect(screen.getByRole('button', { name: /switch to high quality/i })).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.getByRole('button', { name: '3D model quality: Standard' })).toHaveAttribute('aria-pressed', 'false');
     });
 
     it('preloads the models of the current and the next scene, and again when the tier changes', async () => {
@@ -622,8 +622,8 @@ describe('App', () => {
         expect(useAppStore.getState().sideNavExpanded).toBe(true);
         expect(useAppStore.getState().modelQuality).toBe('high');
         expect(useAppStore.getState().accessibilityMode).toBe(false);
-        await userEvent.click(screen.getByRole('button', { name: /Switch to (light|dark) theme/ }));
-        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        await userEvent.click(screen.getByRole('button', { name: /^Colour theme/ }));
+        await userEvent.click(screen.getByRole('button', { name: /^Text-only mode/ }));
         expect(useAppStore.getState().accessibilityMode).toBe(true);
       } finally {
         vi.restoreAllMocks();
@@ -723,6 +723,27 @@ describe('App', () => {
       expect(scrollToSceneProgress).toHaveBeenLastCalledWith(2, 0.5 / tlsContent.scenes[2].steps.length, true);
     });
 
+    it('shows where you are in a breadcrumb, and its scene takes you back to the scene start', async () => {
+      const { useAppStore } = await openScene(2, 0.05);
+      const scrollToSceneProgress = vi.fn();
+      await act(async () => useAppStore.setState({ scrollApi: { scrollBy: vi.fn(), scrollToPage: vi.fn(), scrollToSceneProgress } }));
+      const crumbs = screen.getByRole('navigation', { name: 'Breadcrumb' });
+      expect(crumbs).toHaveTextContent(tlsContent.scenes[2].title);
+      expect(crumbs).toHaveTextContent('2.1');
+      await userEvent.click(within(crumbs).getByRole('button'));
+      expect(scrollToSceneProgress).toHaveBeenLastCalledWith(2, 0.5 / tlsContent.scenes[2].steps.length, true);
+    });
+
+    it('moves between steps with the buttons at the bottom right, across scenes, and disables Previous at the very first step', async () => {
+      const { useAppStore } = await openScene(2, 0.05);
+      const scrollToSceneProgress = vi.fn();
+      await act(async () => useAppStore.setState({ scrollApi: { scrollBy: vi.fn(), scrollToPage: vi.fn(), scrollToSceneProgress } }));
+      await userEvent.click(screen.getByRole('button', { name: /^Next step/ }));
+      expect(scrollToSceneProgress).toHaveBeenLastCalledWith(2, 1.5 / tlsContent.scenes[2].steps.length, true);
+      await userEvent.click(screen.getByRole('button', { name: /^Previous step/ }));
+      expect(scrollToSceneProgress).toHaveBeenCalledTimes(2);
+    });
+
     it('leaves the arrow keys to a control that has focus (a slider, a switch)', async () => {
       const { useAppStore } = await openScene(5, 0.95);
       const scrollToSceneProgress = vi.fn();
@@ -736,38 +757,38 @@ describe('App', () => {
       it('replaces the 3D scene with every step of the scene as text, and brings it back', async () => {
         const { useAppStore } = await openScene(2);
         expect(await screen.findByTestId('mock-scroll-canvas')).toBeInTheDocument();
-        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        await userEvent.click(screen.getByRole('button', { name: /^Text-only mode/ }));
         expect(screen.queryByTestId('mock-scroll-canvas')).not.toBeInTheDocument();
         const scene = tlsContent.scenes[2];
         expect(screen.getByRole('heading', { level: 1, name: `Scene 2: ${scene.title}` })).toBeInTheDocument();
         for (const step of scene.steps) expect(within(screen.getByRole('article')).getByText(step.caption)).toBeInTheDocument();
         expect(useAppStore.getState().accessibilityMode).toBe(true);
-        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        await userEvent.click(screen.getByRole('button', { name: /^Text-only mode/ }));
         expect(await screen.findByTestId('mock-scroll-canvas')).toBeInTheDocument();
       });
 
       it('remembers the choice across a reload', async () => {
         await openScene(2);
-        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        await userEvent.click(screen.getByRole('button', { name: /^Text-only mode/ }));
         expect(window.localStorage.getItem('textOnlyMode')).toBe('true');
       });
 
       it('takes the 3D chrome out of the page: no canvas, no lab strip, no 3D viewport stop', async () => {
         await openScene(2);
-        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        await userEvent.click(screen.getByRole('button', { name: /^Text-only mode/ }));
         expect(screen.queryByRole('group', { name: /3D scene/ })).not.toBeInTheDocument();
         expect(screen.queryByRole('button', { name: /3D models/ })).not.toBeInTheDocument();
       });
 
       it('lists the labs of each step with their flags', async () => {
         await openScene(4);
-        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        await userEvent.click(screen.getByRole('button', { name: /^Text-only mode/ }));
         expect(screen.getAllByText('Potassium: 6.3 mmol/L (critical)').length).toBeGreaterThan(0);
       });
 
       it('shows Scene 5 with its counterfactual labs per step and the interactive panel in the last', async () => {
         await openScene(5);
-        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        await userEvent.click(screen.getByRole('button', { name: /^Text-only mode/ }));
         expect(screen.getByText('Uric acid: 3.4 mg/dL (normal)')).toBeInTheDocument(); // 5.2 rasburicase
         const panel = screen.getByRole('region', { name: 'Try interventions' });
         await userEvent.click(within(panel).getByRole('switch', { name: 'Rasburicase' }));
@@ -776,7 +797,7 @@ describe('App', () => {
 
       it('the side menu\'s step links scroll to the step in the text', async () => {
         await openScene(2);
-        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        await userEvent.click(screen.getByRole('button', { name: /^Text-only mode/ }));
         const target = document.getElementById('step-2-1')!;
         const scrollIntoView = vi.fn();
         target.scrollIntoView = scrollIntoView;
@@ -787,7 +808,7 @@ describe('App', () => {
 
       it('has no accessibility violations', async () => {
         const { container } = await openScene(2);
-        await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
+        await userEvent.click(screen.getByRole('button', { name: /^Text-only mode/ }));
         expect(await axe(container)).toHaveNoViolations();
       });
     });

@@ -21,7 +21,17 @@
   padding: var(--space-8) var(--space-4) var(--space-4);
   font-family: var(--font-mono);
   font-weight: 600;
+  /* The full name wraps onto two lines when the menu is open; the abbreviation is one short word. */
+  line-height: var(--line-height-body);
+  overflow-wrap: anywhere;
   color: var(--text-primary);
+}
+
+.collapsed .projectLabel {
+  padding-left: 0;
+  padding-right: 0;
+  text-align: center;
+  font-size: var(--font-size-mono-sm);
 }
 
 .list {
@@ -176,4 +186,85 @@ button.subItem:focus-visible {
   button.subItem {
     min-height: 44px;
   }
+}
+
+/* App-level switches at the bottom of the menu. */
+.settings {
+  list-style: none;
+  margin: auto 0 0;
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.setting {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-body-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.settingIconOnly {
+  justify-content: center;
+  padding: 0;
+}
+
+.setting:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.setting:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.setting[aria-pressed='true'] .settingIcon {
+  color: var(--monitor-trace);
+}
+
+.settingIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.settingLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settingValue {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-mono-sm);
+  color: var(--text-muted);
+}
+
+.tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-width: 240px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-input);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body-sm);
+  z-index: var(--z-system);
+}
+
+.tooltip span {
+  color: var(--text-secondary);
 }

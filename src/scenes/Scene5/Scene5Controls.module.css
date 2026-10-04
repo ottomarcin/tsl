@@ -10,7 +10,8 @@
 .panel {
   position: absolute;
   right: var(--space-8);
-  bottom: var(--space-16);
+  /* Above the previous/next buttons in the corner. */
+  bottom: calc(var(--space-4) + 44px + var(--space-3));
   z-index: var(--z-persistent-ui);
 }
 
@@ -18,7 +19,8 @@
   position: absolute;
   left: var(--space-4);
   right: var(--space-4);
-  top: 72px;
+  /* Above the previous/next buttons; the caption has the top. */
+  bottom: calc(var(--space-4) + 44px + var(--space-3));
   z-index: var(--z-persistent-ui);
 }
 
@@ -35,8 +37,9 @@
 
 @media (max-width: 767px) {
   .scrubber {
-    top: 72px;
-    bottom: auto;
+    left: var(--space-4);
+    transform: none;
+    bottom: calc(var(--space-4) + 44px + var(--space-3));
     width: calc(100% - 2 * var(--space-4));
   }
 }
@@ -47,11 +50,10 @@
   margin-bottom: var(--space-4);
 }
 
-/* A short landscape screen has no room across the top: the button sits in the corner, under the toggles. */
+/* A short landscape screen has no room across the top: the button sits in the corner, above the step buttons. */
 @media (min-width: 768px) and (max-height: 560px) {
   .sheetButton {
     left: auto;
-    top: 72px;
     width: auto;
   }
 }

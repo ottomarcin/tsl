@@ -58,8 +58,8 @@ export const SYSTEMIC_LAYOUTS: Record<SystemicLayout, SystemicLayoutSpec> = {
     hand: { position: [3.0, 0.3, 0], scale: 1.05, zoom: 1.9, closeUpY: 0.9 + HAND_CLOSEUP_LIFT },
     heartThreadEnd: [-4.0, 2.7, 0],
     handThreadEnd: [3.0, 2.6, 0],
-    extent: { halfWidth: 7.0, halfHeight: 5.9 },
-    lookAtDy: -1.4,
+    extent: { halfWidth: 7.0, halfHeight: 5.0 },
+    lookAtDy: 0.3,
   },
   stacked: {
     origin: [0, 8.0, 0],

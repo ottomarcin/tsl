@@ -147,7 +147,7 @@ export const REWIND_START = 5 - REWIND_SPAN;
  * steps were in a different order). The cascade (and the source cloud above it) moves down by this much once the story
  * is past Scene 3, where neither is on screen.
  */
-export const SCENE5_SHIFT_Y = -16;
+export const SCENE5_SHIFT_Y = -24;
 /** From this point on the cascade and the source cloud sit at their Scene 5 height (nothing of them is visible there). */
 export const CASCADE_MOVES_AT = 4;
 

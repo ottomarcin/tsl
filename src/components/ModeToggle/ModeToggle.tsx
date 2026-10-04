@@ -16,6 +16,10 @@ export function ModeToggle({ toggle, value, onChange }: ModeToggleProps) {
   const active = toggle.options.find((o) => o.id === value) ?? toggle.options[0];
   return (
     <Tabs.Root className={styles.wrap} value={active.id} onValueChange={onChange} activationMode="manual">
+      {/* Said aloud by the tab list's own label; shown so a sighted viewer knows what the choice is about. */}
+      <span className={styles.title} aria-hidden="true">
+        {toggle.label}
+      </span>
       <Tabs.List className={styles.list} aria-label={toggle.label}>
         {toggle.options.map((o) => (
           <Tabs.Trigger key={o.id} value={o.id} className={styles.tab}>

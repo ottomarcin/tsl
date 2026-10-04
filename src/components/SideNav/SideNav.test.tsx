@@ -199,4 +199,37 @@ describe('SideNav', () => {
       expect(await axe(container)).toHaveNoViolations();
     });
   });
+
+  describe('settings and project name', () => {
+    const props = { scenes, currentSceneIndex: 0, onToggleExpanded: vi.fn(), onJumpToScene: vi.fn(), onJumpToLanding: vi.fn(), onJumpToEnd: vi.fn() };
+    const settings = (onToggle = vi.fn()) => [
+      { id: 'text', label: 'Text-only mode', description: 'All the content as text.', value: 'Off', pressed: false, icon: <span />, onToggle },
+    ];
+
+    it('spells out the project name when expanded and shortens it to TLS when collapsed', () => {
+      const { rerender } = render(<SideNav {...props} expanded />);
+      expect(screen.getByText('Tumor lysis syndrome')).toBeInTheDocument();
+      rerender(<SideNav {...props} expanded={false} />);
+      expect(screen.getByText('TLS')).toHaveAttribute('title', 'Tumor lysis syndrome');
+    });
+
+    it('lists the settings with their state, labelled when expanded and icon-only when collapsed', async () => {
+      const onToggle = vi.fn();
+      const { rerender } = render(<SideNav {...props} expanded settings={settings(onToggle)} />);
+      const button = screen.getByRole('button', { name: 'Text-only mode: Off' });
+      expect(button).toHaveAttribute('aria-pressed', 'false');
+      expect(button).toHaveTextContent('Text-only mode');
+      await userEvent.click(button);
+      expect(onToggle).toHaveBeenCalledOnce();
+      rerender(<SideNav {...props} expanded={false} settings={settings(onToggle)} />);
+      expect(screen.getByRole('button', { name: 'Text-only mode: Off' })).not.toHaveTextContent('Text-only mode');
+    });
+
+    it('explains a setting in a tooltip on focus', async () => {
+      render(<SideNav {...props} expanded={false} settings={settings()} />);
+      await userEvent.tab();
+      screen.getByRole('button', { name: 'Text-only mode: Off' }).focus();
+      expect((await screen.findAllByText('All the content as text.')).length).toBeGreaterThan(0);
+    });
+  });
 });

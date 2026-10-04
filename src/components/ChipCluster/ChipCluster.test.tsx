@@ -20,11 +20,11 @@ describe('chipAnchor', () => {
 });
 
 describe('chipAnchor and the caption', () => {
-  it('keeps every chip out of the lower-left corner, where the caption block and the legend sit', () => {
+  it('keeps every chip out of the upper-left corner (breadcrumb and caption) and the lower-left corner (legend)', () => {
     for (const count of [1, 3, 5, 7, 9]) {
       for (let i = 0; i < count; i++) {
         const { x, y } = chipAnchor(i, count);
-        const inCaptionZone = x <= CAPTION_ZONE.maxX && y >= CAPTION_ZONE.minY;
+        const inCaptionZone = x <= CAPTION_ZONE.maxX && (y <= CAPTION_ZONE.maxY || y >= CAPTION_ZONE.legendMinY);
         expect(inCaptionZone, `${i + 1} of ${count} at ${x.toFixed(0)},${y.toFixed(0)}`).toBe(false);
       }
     }
@@ -41,7 +41,10 @@ describe('chipAnchor and the caption', () => {
     expect(Math.min(...pts.map((p) => p.x))).toBeLessThan(25);
     expect(Math.max(...pts.map((p) => p.x))).toBeGreaterThan(75);
     expect(Math.min(...pts.map((p) => p.y))).toBeLessThan(25);
-    expect(pts[0].x).toBeLessThan(pts[Math.floor(pts.length / 2)].x);
+    expect(Math.max(...pts.map((p) => p.y))).toBeGreaterThan(75);
+    // Clockwise from the top: the first is near the top centre, the middle is on the right.
+    expect(Math.abs(pts[0].x - 50)).toBeLessThan(15);
+    expect(pts[Math.floor(pts.length / 2)].y).toBeGreaterThan(pts[0].y);
   });
 });
 
@@ -50,7 +53,7 @@ describe('chipColumnAnchor', () => {
     const pts = chips.map((_, i) => chipColumnAnchor(i, chips.length));
     expect(new Set(pts.map((p) => p.x))).toEqual(new Set([50]));
     for (let i = 1; i < pts.length; i++) expect(pts[i].y).toBeGreaterThan(pts[i - 1].y);
-    expect(chipColumnAnchor(0, 1).y).toBe(13);
+    expect(chipColumnAnchor(0, 1).y).toBe(36);
   });
 });
 

@@ -36,7 +36,7 @@ function CanvasBackground() {
  * scroll proxy across all 6 scenes) — this is what makes deep-linking into
  * /scene/3 without scrolling through 0–2 possible (tech arch §6).
  */
-export function ScrollCanvas({ viewShift = 0, paused = false }: { viewShift?: number; paused?: boolean }) {
+export function ScrollCanvas({ viewShift = 0, viewShiftY = 0, paused = false }: { viewShift?: number; viewShiftY?: number; paused?: boolean }) {
   return (
     <>
     {/* 'never' stops rendering and the clock's frames while the tab is in the background (design spec §10). */}
@@ -55,7 +55,7 @@ export function ScrollCanvas({ viewShift = 0, paused = false }: { viewShift?: nu
       <directionalLight color="#F0C080" position={[3, 5, -8]} intensity={LIGHT_RIG.rim} />
       <ScrollControls pages={SCENE_COUNT} damping={0.2}>
         <ScrollProgressSync />
-        <Experience viewShift={viewShift} />
+        <Experience viewShift={viewShift} viewShiftY={viewShiftY} />
       </ScrollControls>
     </Canvas>
     <AssetProgressBridge />
