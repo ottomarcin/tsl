@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { axe } from 'jest-axe';
 import { describe, expect, it } from 'vitest';
-import { ChipCluster, chipAnchor, chipColumnAnchor } from './ChipCluster';
+import { CAPTION_ZONE, ChipCluster, chipAnchor, chipColumnAnchor } from './ChipCluster';
 import { tlsContent } from '../../content/tls';
 
 const chips = tlsContent.scenes[0].chips!;
@@ -16,6 +16,32 @@ describe('chipAnchor', () => {
       expect(p.y).toBeGreaterThan(0);
       expect(p.y).toBeLessThan(100);
     });
+  });
+});
+
+describe('chipAnchor and the caption', () => {
+  it('keeps every chip out of the lower-left corner, where the caption block and the legend sit', () => {
+    for (const count of [1, 3, 5, 7, 9]) {
+      for (let i = 0; i < count; i++) {
+        const { x, y } = chipAnchor(i, count);
+        const inCaptionZone = x <= CAPTION_ZONE.maxX && y >= CAPTION_ZONE.minY;
+        expect(inCaptionZone, `${i + 1} of ${count} at ${x.toFixed(0)},${y.toFixed(0)}`).toBe(false);
+      }
+    }
+  });
+  it('a narrower ring keeps its chips well inside a narrow layer (short landscape screens)', () => {
+    for (let i = 0; i < 7; i++) {
+      const { x } = chipAnchor(i, 7, 26);
+      expect(x).toBeGreaterThan(20);
+      expect(x).toBeLessThan(80);
+    }
+  });
+  it('still spreads them around the mass: both sides and the top are used, in order from the left', () => {
+    const pts = chips.map((_, i) => chipAnchor(i, chips.length));
+    expect(Math.min(...pts.map((p) => p.x))).toBeLessThan(25);
+    expect(Math.max(...pts.map((p) => p.x))).toBeGreaterThan(75);
+    expect(Math.min(...pts.map((p) => p.y))).toBeLessThan(25);
+    expect(pts[0].x).toBeLessThan(pts[Math.floor(pts.length / 2)].x);
   });
 });
 

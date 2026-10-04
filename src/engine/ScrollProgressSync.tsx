@@ -46,8 +46,6 @@ export function ScrollProgressSync() {
     scroll.el.setAttribute('data-scroll-proxy', '');
     registerScrollApi({
       scrollBy: (deltaY: number) => {
-        // The viewer scrolling takes over from a jump in progress.
-        stopAnimation.current();
         scroll.el.scrollTop += deltaY;
       },
       scrollToSceneProgress: (page: number, progress: number, smooth = false) => {

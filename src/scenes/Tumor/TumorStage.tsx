@@ -41,6 +41,9 @@ const CLOUD_KEEP_EVERY = 86;
  * cells rupture and release three coloured bursts, and those bursts then gather into the source cloud at the top of
  * the cascade (Scene 2). It never remounts at a scene boundary: it simply keeps following the global timeline.
  */
+/** Where on the timeline the wavefront can be dragged (Scene 1, with a margin). */
+const DRAG_RANGE = [0.9, 2.1] as const;
+
 /** Position on the timeline from which the mass is gone (it has shrunk away by the end of Scene 1). */
 export const CELLS_GONE_G = 2.02;
 
@@ -59,7 +62,12 @@ export function TumorStage({ reducedMotion = false }: TumorStageProps) {
   // Dragging the bar overrides scroll-derived progress so it sits exactly under the pointer; the scroll position is
   // moved to match, so everything else follows, and releasing never jumps.
   const drag = useRef(new DragOverride()).current;
-  const getLocal1 = useCallback(() => drag.resolve(localProgress(getG(), 1)), [drag, getG]);
+  const getLocal1 = useCallback(() => {
+    const g = getG();
+    // The bar belongs to Scene 1 (and its edges): anywhere else a dragged value must not survive.
+    if (g < DRAG_RANGE[0] || g > DRAG_RANGE[1]) drag.reset();
+    return drag.resolve(localProgress(g, 1));
+  }, [drag, getG]);
   const grabOffset = useRef(0);
   const dragTo = useCallback(
     (pointerX: number) => {

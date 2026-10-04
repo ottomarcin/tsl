@@ -58,16 +58,23 @@ describe('smoothScrollTo', () => {
     }
     expect(el.scrollTop).toBe(0);
   });
-  it('stops where it is when the viewer takes over', () => {
+  it('does not stop for wheel, touch or key events (trackpad momentum keeps arriving after a flick)', () => {
     const el = element(0);
     const done = vi.fn();
     smoothScrollTo(el, 2000, done);
-    tick(150);
-    const at = el.scrollTop;
-    el.dispatchEvent(new Event('wheel'));
-    expect(frames).toHaveLength(0);
-    expect(el.scrollTop).toBe(at);
-    expect(done).not.toHaveBeenCalled();
+    tick(100);
+    for (const type of ['wheel', 'touchstart', 'keydown']) el.dispatchEvent(new Event(type));
+    tick(100);
+    expect(frames).toHaveLength(1);
+    tick(MAX_SCROLL_MS);
+    expect(el.scrollTop).toBe(2000);
+    expect(done).toHaveBeenCalledTimes(1);
+  });
+  it('never runs backwards on a first frame stamped before it started', () => {
+    const el = element(500);
+    smoothScrollTo(el, 1500);
+    tick(-8);
+    expect(el.scrollTop).toBeGreaterThanOrEqual(500);
   });
   it('can be stopped by its caller, and stopping twice is harmless', () => {
     const el = element(0);

@@ -18,11 +18,24 @@ export interface ChipClusterProps {
 
 const STAGGER_MS = 150;
 const CENTRE = { x: 50, y: 52 };
+/** Narrower ring when the layer is only the part of the screen right of the caption column (short landscape). */
+const SHIFTED_RADIUS_X = 26;
 
-/** Evenly spaced positions on an ellipse around the centre, starting top-left of top. */
-export function chipAnchor(index: number, count: number): { x: number; y: number } {
-  const angle = -Math.PI / 2 + ((index + 0.5) / count) * 2 * Math.PI;
-  return { x: CENTRE.x + Math.cos(angle) * 36, y: CENTRE.y + Math.sin(angle) * 34 };
+/**
+ * The part of the layer the caption block and the legend cover (lower left), as percentages of the layer: no chip may
+ * sit in it, or it is hidden behind them.
+ */
+export const CAPTION_ZONE = { maxX: 40, minY: 62 } as const;
+
+/**
+ * Evenly spaced positions along an arc of an ellipse around the centre: from the left, over the top, to the bottom
+ * centre. The lower-left part of the ring is left out because that is where the caption sits.
+ */
+export function chipAnchor(index: number, count: number, radiusX = 36): { x: number; y: number } {
+  const from = (-165 * Math.PI) / 180;
+  const to = (85 * Math.PI) / 180;
+  const angle = count > 1 ? from + (index / (count - 1)) * (to - from) : -Math.PI / 2;
+  return { x: CENTRE.x + Math.cos(angle) * radiusX, y: CENTRE.y + Math.sin(angle) * 32 };
 }
 
 /** Single centred column in the upper part of the layer, clear of the caption block below. */
@@ -42,7 +55,7 @@ export function ChipCluster({ chips, phase, reducedMotion = false, layout = 'rin
   return (
     <div className={[styles.layer, shifted ? styles.layerShifted : ''].join(' ')} data-phase={phase} data-layout={layout} data-shifted={shifted}>
       {chips.map((chip, i) => {
-        const anchor = phase === 'merged' ? CENTRE : (layout === 'column' ? chipColumnAnchor : chipAnchor)(i, chips.length);
+        const anchor = phase === 'merged' ? CENTRE : layout === 'column' ? chipColumnAnchor(i, chips.length) : chipAnchor(i, chips.length, shifted ? SHIFTED_RADIUS_X : undefined);
         const delay = reducedMotion ? 0 : phase === 'shown' ? i * STAGGER_MS : 0;
         const style: CSSProperties = {
           left: `${anchor.x}%`,

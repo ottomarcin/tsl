@@ -177,6 +177,14 @@ export function Wavefront({
           }}
           onPointerMove={(e) => {
             if (!state.current.dragging) return;
+            // A drag is a held button. If the button is up (a release that never reached us), the drag is over: hovering
+            // must never keep moving the story.
+            if (e.buttons === 0) {
+              state.current.dragging = false;
+              setCursor(state.current.hover ? 'grab' : '');
+              onDragEnd?.();
+              return;
+            }
             const x = worldX(e);
             if (x !== null) onDrag?.(x);
           }}

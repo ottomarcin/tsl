@@ -10,8 +10,10 @@ export function scrollDuration(distance: number): number {
 
 /**
  * Scrolls an element to `top` over a fixed time, not at the browser's own pace (which grows with the distance and is
- * slower on a busy page). It runs on the clock, so a dropped frame costs smoothness, never time. The viewer taking over
- * (wheel, touch, key) stops it where it is. Returns a function that stops it.
+ * slower on a busy page). It runs on the clock, so a dropped frame costs smoothness, never time. It does not stop for
+ * wheel, touch or key events: on a trackpad the tail of the last flick (momentum) keeps arriving at the scroll area for
+ * a second or more after the pointer has moved to the menu, and treating it as "the viewer took over" made a click
+ * on a step do nothing. A jump takes under 800 ms; a newer jump replaces it. Returns a function that stops it.
  */
 export function smoothScrollTo(el: HTMLElement, top: number, onDone?: () => void): () => void {
   const from = el.scrollTop;
@@ -28,15 +30,15 @@ export function smoothScrollTo(el: HTMLElement, top: number, onDone?: () => void
     if (stopped) return;
     stopped = true;
     cancelAnimationFrame(frame);
-    for (const type of ['wheel', 'touchstart', 'keydown'] as const) el.removeEventListener(type, stop);
   };
-  for (const type of ['wheel', 'touchstart', 'keydown'] as const) el.addEventListener(type, stop, { passive: true });
   const step = (now: number) => {
     if (stopped) return;
     const t = Math.min(1, (now - start) / duration);
-    el.scrollTop = from + distance * ease(t);
+    // The first frame's timestamp can be a hair before the moment the animation was started: never run backwards.
+    el.scrollTop = from + distance * ease(Math.max(0, t));
     if (t < 1) frame = requestAnimationFrame(step);
     else {
+      el.scrollTop = top; // exactly there, whatever the last easing step left
       stop();
       onDone?.();
     }

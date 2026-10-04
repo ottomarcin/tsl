@@ -213,6 +213,19 @@ describe('Wavefront dragging', () => {
     expect(handlers.onDrag).toHaveBeenCalledTimes(1);
   });
 
+  it('ends a drag when the pointer moves with no button held (a release that never arrived), without moving the story', async () => {
+    const { renderer, handlers, hit } = await mountDraggable();
+    await renderer.fireEvent(hit, 'pointerDown', { ...event(2), buttons: 1 });
+    await renderer.fireEvent(hit, 'pointerMove', { ...event(3), buttons: 1 });
+    expect(handlers.onDrag).toHaveBeenCalledTimes(1);
+    await renderer.fireEvent(hit, 'pointerMove', { ...event(4), buttons: 0 });
+    expect(handlers.onDragEnd).toHaveBeenCalledTimes(1);
+    expect(handlers.onDrag).toHaveBeenCalledTimes(1);
+    await renderer.fireEvent(hit, 'pointerMove', { ...event(5), buttons: 0 });
+    expect(handlers.onDrag).toHaveBeenCalledTimes(1);
+    expect(handlers.onDragEnd).toHaveBeenCalledTimes(1);
+  });
+
   it('captures the pointer on grab so the drag survives leaving the bar', async () => {
     const { renderer, hit } = await mountDraggable();
     const e = event(2);
@@ -322,6 +335,23 @@ describe('TumorStage wavefront dragging', () => {
     const u = (wave.instance as unknown as { material: { uniforms: Record<string, { value: number }> } }).material.uniforms;
     expect(u.u_wave_x.value).toBeCloseTo(1.7, 4); // not the (stale, damped) store progress
     await renderer.fireEvent(hit, 'pointerUp', ev(2));
+  });
+
+  it('does not keep a dragged value once the story is elsewhere: the bar is gone and cannot be grabbed in Scene 4', async () => {
+    const { renderer, hit, scrollToSceneProgress } = await start();
+    await renderer.fireEvent(hit, 'pointerDown', ev(waveX(0.4)));
+    await renderer.fireEvent(hit, 'pointerMove', ev(1));
+    // The pointer is never released; the visitor jumps to Scene 4 with the menu.
+    await setG(renderer, 4.2);
+    const wave = renderer.scene.children.find((c) => c.type === 'Mesh' && (c.instance as unknown as { material: { uniforms?: unknown } }).material.uniforms)!;
+    const u = (wave.instance as unknown as { material: { uniforms: Record<string, { value: number }> } }).material.uniforms;
+    expect(u.u_opacity.value).toBe(0);
+    expect((hit.instance as unknown as { visible: boolean }).visible).toBe(false);
+    // And hovering where it was does not take the story back.
+    scrollToSceneProgress.mockClear();
+    await renderer.fireEvent(hit, 'pointerMove', { ...ev(0), buttons: 0 });
+    await renderer.fireEvent(hit, 'pointerMove', ev(0));
+    expect(scrollToSceneProgress).not.toHaveBeenCalled();
   });
 
   it('clamps the bar to the sweep range', async () => {

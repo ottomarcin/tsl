@@ -30,9 +30,16 @@
   cursor: default;
 }
 
+/* A factor that is not present for this patient: still readable (muted text, which meets AA), and clearly not in play
+   (dashed outline, no fill bar, no accent colour) rather than faded to a ghost. */
 .inactive {
-  opacity: 0.4;
-  border-color: transparent;
+  border-style: dashed;
+  border-color: var(--border-strong);
+  background: transparent;
+}
+
+.inactive .value {
+  color: var(--text-muted);
 }
 
 .row {
