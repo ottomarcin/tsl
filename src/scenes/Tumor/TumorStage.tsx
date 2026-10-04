@@ -18,7 +18,7 @@ import {
   type ParticleSystemId,
 } from '../../lib/cytolysis';
 import { DragOverride } from '../../lib/dragOverride';
-import { cloudTransition, idleSway, localProgress, massRotation } from '../../lib/timeline';
+import { cascadeShiftAt, cloudTransition, idleSway, localProgress, massRotation } from '../../lib/timeline';
 import { useAppStore } from '../../store/useAppStore';
 import { moleculeColor } from '../shared/molecules';
 import { useFraming } from '../shared/framing';
@@ -140,6 +140,8 @@ export function TumorStage({ reducedMotion = false }: TumorStageProps) {
           count={cells.length * PARTICLES.perCellPerSystem}
           color={moleculeColor(id, theme)}
           getProgress={particleKey}
+          // Scene 5 starts again from the source cloud, which sits where the rewound cascade is (below Scene 4's panels).
+          getOffsetY={() => cascadeShiftAt(getG())}
           blend={light ? 'normal' : 'additive'}
           fill={(positions, colors, rgb, key, stride) =>
             fillParticleBuffers(positions, colors, worldCells, waveCoords, velocities[id], rgb, localProgress(key, 1), stride, {

@@ -134,12 +134,27 @@ export function systemicPresence(g: number): number {
 // ---------------------------------------------------------------- the rewind (Scene 5)
 
 /**
- * Over the end of Scene 4 the panels fade out and the camera climbs back to the cascade's framing, which returns at
+ * Over the end of Scene 4 the panels fade out and the camera moves on, down, to the cascade's framing, which returns at
  * its T+0 state (`g = 5` already is Scene 5). The cascade and the panels live at different heights, so the camera
  * covers the distance between them.
  */
 export const REWIND_SPAN = 0.14;
 export const REWIND_START = 5 - REWIND_SPAN;
+
+/**
+ * Scene 5 is further down the world than Scene 4, so scrolling on keeps going the same way: the camera flies down from the
+ * heart and hand to the rewound cascade (it used to climb back up to where Scene 2's cascade was, which felt like the
+ * steps were in a different order). The cascade (and the source cloud above it) moves down by this much once the story
+ * is past Scene 3, where neither is on screen.
+ */
+export const SCENE5_SHIFT_Y = -16;
+/** From this point on the cascade and the source cloud sit at their Scene 5 height (nothing of them is visible there). */
+export const CASCADE_MOVES_AT = 4;
+
+/** How far down the cascade and the source cloud are at `g`. */
+export function cascadeShiftAt(g: number): number {
+  return g >= CASCADE_MOVES_AT ? SCENE5_SHIFT_Y : 0;
+}
 
 export function rewindTransition(g: number): number {
   return smooth(clamp01((g - REWIND_START) / REWIND_SPAN));
@@ -230,11 +245,12 @@ export function cameraPoseAt(g: number, ctx: CameraContext): CameraPose {
   };
   if (g <= REWIND_START) return panels;
 
-  // End of Scene 4: climb back to the cascade's framing for the rewind.
+  // End of Scene 4: on down to the rewound cascade, which sits below the panels.
   const r = rewindTransition(g);
+  const ty5 = ctx.cascadeTargetY + SCENE5_SHIFT_Y;
   return {
-    position: [0, lerp(panels.position[1], ctx.cascadeTargetY, r), lerp(panels.position[2], ctx.cascadeDistance, r)],
-    target: [0, lerp(panels.target[1], ctx.cascadeTargetY, r), 0],
+    position: [0, lerp(panels.position[1], ty5, r), lerp(panels.position[2], ctx.cascadeDistance, r)],
+    target: [0, lerp(panels.target[1], ty5, r), 0],
     fov: 50,
   };
 }

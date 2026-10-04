@@ -14,13 +14,15 @@ export interface ParticleBurstProps {
   size?: number;
   /** 'additive' (dark backgrounds) fades by darkening; 'normal' (light backgrounds) fades through vertex alpha. */
   blend?: 'additive' | 'normal';
+  /** Height of the whole system in its parent, read each frame (default 0). */
+  getOffsetY?: () => number;
 }
 
 /**
  * Generic additive particle system driven by an external simulation (tech arch §8.2, "ParticleStream" family).
  * Per-particle fade is baked into vertex colors, which is exact under additive blending.
  */
-export function ParticleBurst({ count, fill, getProgress, color, size = 0.2, blend = 'additive' }: ParticleBurstProps) {
+export function ParticleBurst({ count, fill, getProgress, color, size = 0.2, blend = 'additive', getOffsetY }: ParticleBurstProps) {
   const stride = blend === 'normal' ? 4 : 3;
   const points = useRef<Points>(null);
   const lastProgress = useRef<number>(NaN);
@@ -43,6 +45,7 @@ export function ParticleBurst({ count, fill, getProgress, color, size = 0.2, ble
   }, [rgb, fill, stride]);
 
   useFrame(() => {
+    if (getOffsetY && points.current) points.current.position.y = getOffsetY();
     const p = getProgress();
     if (p === lastProgress.current) return;
     lastProgress.current = p;

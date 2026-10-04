@@ -1,4 +1,6 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+import type { Group } from 'three';
 import { ModelBoundary } from '../../assets/ModelBoundary';
 import { tlsContent } from '../../content/tls';
 import { tlsInterventions } from '../../content/tls/interventions';
@@ -17,7 +19,7 @@ import {
   streamReveal,
   type StreamId,
 } from '../../lib/cascade';
-import { SCENE2_OFFSET, cascadePresence } from '../../lib/timeline';
+import { SCENE2_OFFSET, cascadePresence, cascadeShiftAt } from '../../lib/timeline';
 import { useAppStore } from '../../store/useAppStore';
 import { moleculeColor } from '../shared/molecules';
 import { useGetG } from '../shared/useGetG';
@@ -60,6 +62,11 @@ export function Scene2({ reducedMotion = false }: Scene2Props) {
   const getProgress = useCallback(() => cascadeProgressAt(getG()), [getG]);
   // From the rewind on, the tubes are all drawn (idle) before anything flows along them.
   const rewound = () => getG() >= 4;
+  // Past Scene 3 the cascade is moved down below the panels of Scene 4 (see cascadeShiftAt); nothing of it is on screen then.
+  const placement = useRef<Group>(null);
+  useFrame(() => {
+    if (placement.current) placement.current.position.y = SCENE2_OFFSET[1] + cascadeShiftAt(getG());
+  });
   const getEffects = useEasedEffects(getG, reducedMotion);
   const purineIntercept = useMemo(() => tlsInterventions.find((d) => d.id === 'rasburicase')!.cascadePositionT, []);
   const xoIntercept = useMemo(() => tlsInterventions.find((d) => d.id === 'allopurinol')!.cascadePositionT, []);
@@ -73,7 +80,7 @@ export function Scene2({ reducedMotion = false }: Scene2Props) {
   const purineWaypoints = useMemo(() => tlsContent.cascade.branches.find((b) => b.id === 'purines')?.waypoints ?? [], []);
 
   return (
-    <group position={SCENE2_OFFSET}>
+    <group ref={placement} position={SCENE2_OFFSET}>
       {STREAM_IDS.map((id: StreamId) => (
         <group key={id}>
           <PathLine

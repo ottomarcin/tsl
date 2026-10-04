@@ -14,6 +14,9 @@ import {
   SYSTEMIC_START,
   REWIND_SPAN,
   REWIND_START,
+  SCENE5_SHIFT_Y,
+  CASCADE_MOVES_AT,
+  cascadeShiftAt,
   rewindTransition,
   systemicPresence,
   systemicTransition,
@@ -227,9 +230,27 @@ describe('rewind hand-over: the panels give way to the cascade again (Scene 5)',
   });
   it('every scene start looks like its scene: at g = 5 the camera frames the cascade', () => {
     const p = cameraPoseAt(5, ctx);
-    expect(p.position[1]).toBeCloseTo(ctx.cascadeTargetY, 6);
+    expect(p.position[1]).toBeCloseTo(ctx.cascadeTargetY + SCENE5_SHIFT_Y, 6);
     expect(p.position[2]).toBeCloseTo(ctx.cascadeDistance, 6);
     expect(cameraPoseAt(5.7, ctx)).toEqual(cameraPoseAt(5, ctx));
+  });
+  it('keeps going the same way: the camera only moves down from the cascade through the kidney, the panels and on to the rewound cascade', () => {
+    // Scrolling down must never fly the camera back up (it used to climb from the panels back to the cascade's old spot).
+    let prev = cameraPoseAt(CLOUD_START, ctx).position[1];
+    for (let g = CLOUD_START + 0.005; g <= 5.2; g += 0.005) {
+      const y = cameraPoseAt(g, ctx).position[1];
+      expect(y, `g = ${g.toFixed(3)}`).toBeLessThanOrEqual(prev + 1e-6);
+      prev = y;
+    }
+  });
+  it('the rewound cascade sits below the panels, out of sight until the camera arrives', () => {
+    expect(SCENE5_SHIFT_Y).toBeLessThan(0);
+    expect(cascadeShiftAt(CASCADE_MOVES_AT - 0.001)).toBe(0);
+    expect(cascadeShiftAt(CASCADE_MOVES_AT)).toBe(SCENE5_SHIFT_Y);
+    expect(cascadeShiftAt(5.5)).toBe(SCENE5_SHIFT_Y);
+    // It moves while neither the cascade nor the cloud shows: the cascade is faded out from the dive to the rewind.
+    expect(cascadePresence(CASCADE_MOVES_AT)).toBe(0);
+    expect(cascadePresence(CASCADE_MOVES_AT - 0.2)).toBe(0);
   });
   it('has no jump where it starts or ends', () => {
     for (const boundary of [REWIND_START, 5]) {
