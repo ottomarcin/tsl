@@ -26,7 +26,7 @@ export function CaptionBlock({ sceneTitle, caption, learnMore }: CaptionBlockPro
         }
       }}
     >
-      <h2 className={styles.title}>{sceneTitle}</h2>
+      <h1 className={styles.title}>{sceneTitle}</h1>
       <p className={styles.caption} aria-live="polite">
         {caption}
       </p>
@@ -43,7 +43,7 @@ export function CaptionBlock({ sceneTitle, caption, learnMore }: CaptionBlockPro
             {open ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
           </button>
           <div id={panelId} className={[styles.panel, open ? styles.panelOpen : ''].join(' ')} hidden={!open}>
-            <h3 className={styles.heading}>{learnMore.heading}</h3>
+            <h2 className={styles.heading}>{learnMore.heading}</h2>
             <p className={styles.body}>{learnMore.body}</p>
             {learnMore.citations.length > 0 && (
               <>

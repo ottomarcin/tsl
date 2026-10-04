@@ -65,3 +65,12 @@ describe('CaptionBlock: Escape', () => {
     expect(screen.getByRole('button', { name: /learn more/i })).toHaveAttribute('aria-expanded', 'false');
   });
 });
+
+describe('CaptionBlock: headings', () => {
+  it('the scene title is the page\'s level-one heading and the Learn more heading sits under it', async () => {
+    render(<CaptionBlock sceneTitle="The cascade" caption="C" learnMore={{ heading: 'Why', body: 'B', citations: [] }} />);
+    expect(screen.getByRole('heading', { level: 1, name: 'The cascade' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /learn more/i }));
+    expect(screen.getByRole('heading', { level: 2, name: 'Why' })).toBeInTheDocument();
+  });
+});

@@ -57,6 +57,9 @@
 @media (max-width: 767px), (pointer: coarse) {
   .track {
     gap: 0;
+    /* Shares the row with the info button and the time: the dots give way before anything is pushed off screen. */
+    min-width: 0;
+    flex-shrink: 1;
   }
 
   .dot.completed,
@@ -64,7 +67,8 @@
   .dot.future {
     position: relative;
     /* 44px where the strip has room; on a 320px phone, what is left after the info button and the time. */
-    width: clamp(28px, calc((100vw - 140px) / 6), 44px);
+    flex: 0 1 44px;
+    min-width: 28px;
     height: 44px;
     border: none;
     border-radius: 0;

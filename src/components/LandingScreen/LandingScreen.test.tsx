@@ -68,3 +68,10 @@ describe('LandingScreen', () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 });
+
+describe('LandingScreen: landmarks', () => {
+  it('is the page\'s main landmark, so nothing sits outside a landmark', () => {
+    render(<LandingScreen content={tlsLanding} theme="dark" onToggleTheme={() => {}} webglSupported onBegin={() => {}} />);
+    expect(screen.getByRole('main')).toContainElement(screen.getByRole('heading', { level: 1 }));
+  });
+});

@@ -25,7 +25,7 @@ export function LandingScreen({
   showSlowLoadMessage = false,
 }: LandingScreenProps) {
   return (
-    <div className={styles.page}>
+    <main className={styles.page}>
       <div className={styles.themeToggleSlot}>
         <ThemeToggle theme={theme} onToggle={onToggleTheme} />
       </div>
@@ -51,6 +51,6 @@ export function LandingScreen({
 
         <p className={styles.meta}>{content.meta}</p>
       </div>
-    </div>
+    </main>
   );
 }

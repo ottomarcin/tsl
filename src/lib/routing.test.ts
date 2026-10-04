@@ -29,4 +29,10 @@ describe('parsePathname / routeToPathname round-trip', () => {
     expect(parsePathname('/scene/abc')).toEqual({ kind: 'landing' });
     expect(parsePathname('')).toEqual({ kind: 'landing' });
   });
+
+  it('accepts a trailing slash', () => {
+    expect(parsePathname('/scene/2/')).toEqual({ kind: 'scene', index: 2 });
+    expect(parsePathname('/end/')).toEqual({ kind: 'end' });
+    expect(parsePathname('//')).toEqual({ kind: 'landing' });
+  });
 });

@@ -59,3 +59,10 @@
     opacity: 1;
   }
 }
+
+/* The same as the `still` class, for when the page is read before the hook has run. */
+@media (prefers-reduced-motion: reduce) {
+  .ring {
+    animation: none;
+  }
+}
