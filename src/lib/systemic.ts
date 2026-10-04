@@ -115,4 +115,4 @@ export function threadReach(progress: number): number {
 }
 
 /** Equivalent progress under reduced motion: still snapshots of each step. */
-export const REDUCED_MOTION_PROGRESS = [0.2, 0.4, 0.62, 0.9] as const;
+export const REDUCED_MOTION_PROGRESS = [0.2, 0.4, 0.62, 0.84] as const;

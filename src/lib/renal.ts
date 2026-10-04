@@ -154,4 +154,4 @@ export function effectiveMechanism(chosen: string | undefined, progress: number)
 }
 
 /** Equivalent progress under reduced motion: still snapshots of each step. */
-export const REDUCED_MOTION_PROGRESS = [0.2, 0.45, 0.7, 0.92] as const;
+export const REDUCED_MOTION_PROGRESS = [0.2, 0.45, 0.7, 0.84] as const;

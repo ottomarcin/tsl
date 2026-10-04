@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { useScroll } from '@react-three/drei';
 import { useAppStore } from '../store/useAppStore';
 import { SCENE_COUNT } from '../store/types';
+import { smoothScrollTo } from '../lib/smoothScroll';
 
 /**
  * No-render component living inside <ScrollControls>, so it has useScroll()
@@ -24,6 +25,8 @@ export function ScrollProgressSync() {
   const ready = useRef(false);
   // A jump requested before the scroll proxy has layout (deep links mount the canvas and ask for a page in the same
   // commit, while scrollHeight is still 0) is parked here and applied once the proxy is scrollable.
+  // The running scroll animation (a jump between scenes), if any.
+  const stopAnimation = useRef<() => void>(() => {});
   const pendingPage = useRef<{ page: number; progress: number } | null>(null);
   // After applying a jump, ignore the offset until the (damped) scroll catches up with the target page, so the stale
   // value can't undo the jump. Capped so a failed scroll can never freeze the sync.
@@ -43,6 +46,8 @@ export function ScrollProgressSync() {
     scroll.el.setAttribute('data-scroll-proxy', '');
     registerScrollApi({
       scrollBy: (deltaY: number) => {
+        // The viewer scrolling takes over from a jump in progress.
+        stopAnimation.current();
         scroll.el.scrollTop += deltaY;
       },
       scrollToSceneProgress: (page: number, progress: number, smooth = false) => {
@@ -51,9 +56,11 @@ export function ScrollProgressSync() {
         if (max <= 0) return;
         const offset = (page + progress) / SCENE_COUNT;
         if (smooth) {
-          el.scrollTo({ top: offset * max, behavior: 'smooth' });
+          stopAnimation.current();
+          stopAnimation.current = smoothScrollTo(el, offset * max);
           return;
         }
+        stopAnimation.current();
         el.scrollTop = offset * max;
         cutTo(offset);
       },
@@ -62,7 +69,8 @@ export function ScrollProgressSync() {
         const max = el.scrollHeight - el.clientHeight;
         if (max > 0) {
           const offset = (page + progress) / SCENE_COUNT;
-          if (smooth) el.scrollTo({ top: offset * max, behavior: 'smooth' });
+          stopAnimation.current();
+          if (smooth) stopAnimation.current = smoothScrollTo(el, offset * max);
           else {
             el.scrollTop = offset * max;
             cutTo(offset);
