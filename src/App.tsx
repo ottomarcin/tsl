@@ -1,15 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useAppStore } from './store/useAppStore';
 import { useMediaQuery, useBreakpoint, useFirstRunHint, useReducedMotion, useRouteSync, useWebGLSupport, useAnnouncements, useDocumentVisible, useGlobalErrors, useLoadTimeout, usePrinting } from './hooks';
 import { Menu } from 'lucide-react';
-import { ScrollCanvas } from './engine/ScrollCanvas';
+
 import { tlsContent } from './content/tls';
 import { LandingScreen } from './components/LandingScreen/LandingScreen';
 import { ThemeToggle } from './components/ThemeToggle/ThemeToggle';
 import { QualityToggle } from './components/QualityToggle/QualityToggle';
 import { AssetLoadingBar } from './components/AssetLoadingBar/AssetLoadingBar';
-import { useProgress } from '@react-three/drei';
-import { preloadScene } from './assets/useModel';
+import { preloadScene } from './assets/preload';
 import { LabStrip } from './components/LabStrip/LabStrip';
 import { SideNav } from './components/SideNav/SideNav';
 import { ColorLegend } from './components/ColorLegend/ColorLegend';
@@ -24,10 +23,10 @@ import { useScene5Labs } from './scenes/Scene5/useScene5Labs';
 import { SCENE5_INDEX } from './lib/scene5';
 import { EndCard } from './components/EndCard/EndCard';
 import { LiveAnnouncer } from './components/LiveAnnouncer/LiveAnnouncer';
+import { loadScrollCanvas } from './engine/loadScrollCanvas';
 import { Toast } from './components/Toast/Toast';
 import { PrintDocument } from './scenes/TextOnly/PrintDocument';
 import { CanvasBoundary } from './engine/CanvasBoundary';
-import { clearFailedModels } from './assets/useModel';
 import { onModelError, retryModelErrors } from './assets/loadErrors';
 import { MinimapToggle } from './components/MinimapToggle/MinimapToggle';
 import { LegendRows } from './components/ColorLegend/LegendRows';
@@ -44,6 +43,8 @@ import { SYSTEMIC_START } from './lib/timeline';
 import { adjacentStep, labValuesAt, stepIndexFromProgress, timestampAt } from './lib/steps';
 import { FirstRunScrollHint } from './components/FirstRunScrollHint/FirstRunScrollHint';
 import styles from './App.module.css';
+
+const ScrollCanvas = lazy(loadScrollCanvas);
 
 const STAGE_LABELS = tlsContent.scenes.map((s) => s.title);
 
@@ -92,7 +93,7 @@ export function App() {
   const leavingScene = useAppStore((s) => s.globalProgress > SYSTEMIC_START + 0.02 && s.globalProgress < 4);
   const modeSelection = useAppStore((s) => s.modeSelection);
   const setMode = useAppStore((s) => s.setMode);
-  const { active: assetsLoading, progress: assetProgress } = useProgress();
+  const { active: assetsLoading, progress: assetProgress } = useAppStore((s) => s.assets);
   const sideNavExpanded = useAppStore((s) => s.sideNavExpanded);
   const toggleSideNav = useAppStore((s) => s.toggleSideNav);
   const labValues = useAppStore((s) => s.labValues);
@@ -133,6 +134,11 @@ export function App() {
     preloadScene(tlsContent.models, preloadFrom + 1, modelQuality);
   }, [preloadFrom, modelQuality, webglSupported]);
 
+  // The landing screen is read for a few seconds: use them to fetch the 3D engine, so Begin does not wait for it.
+  useEffect(() => {
+    if (route.kind === 'landing' && webglSupported) void loadScrollCanvas();
+  }, [route.kind, webglSupported]);
+
   // Rail defaults: expanded on desktop, icon rail on tablet (design spec §4.3). The user can still toggle it.
   useEffect(() => {
     if (breakpoint === 'desktop') setSideNavExpanded(true);
@@ -171,8 +177,8 @@ export function App() {
           action: {
             label: 'Retry',
             onClick: () => {
-              clearFailedModels();
-              retryModelErrors();
+              // The loader (three.js) is only fetched now, if it is not there already.
+              void import('./assets/useModel').then((m) => m.clearFailedModels()).then(retryModelErrors);
               dismissToast();
             },
           },
@@ -334,7 +340,9 @@ export function App() {
             }}
           >
             <CanvasBoundary onTextOnly={toggleTextOnly}>
-            <ScrollCanvas viewShift={shortViewport && !isMobile ? 0.22 : 0} paused={!pageVisible} />
+            <Suspense fallback={null}>
+              <ScrollCanvas viewShift={shortViewport && !isMobile ? 0.22 : 0} paused={!pageVisible} />
+            </Suspense>
           </CanvasBoundary>
             {scene?.chips && <ChipCluster chips={scene.chips} phase={chipPhase} reducedMotion={reducedMotion} layout={isMobile ? 'column' : 'ring'} shifted={shortViewport && !isMobile} />}
             {scene?.summaryBadge && (

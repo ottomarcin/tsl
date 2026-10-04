@@ -41,6 +41,9 @@ const CLOUD_KEEP_EVERY = 86;
  * cells rupture and release three coloured bursts, and those bursts then gather into the source cloud at the top of
  * the cascade (Scene 2). It never remounts at a scene boundary: it simply keeps following the global timeline.
  */
+/** Position on the timeline from which the mass is gone (it has shrunk away by the end of Scene 1). */
+export const CELLS_GONE_G = 2.02;
+
 export function TumorStage({ reducedMotion = false }: TumorStageProps) {
   const framing = useFraming();
   const theme = useAppStore((s) => s.theme);
@@ -81,6 +84,9 @@ export function TumorStage({ reducedMotion = false }: TumorStageProps) {
     if (!spin.current) return;
     const g = getG();
     spin.current.rotation.y = massRotation(g) + (reducedMotion ? 0 : idleSway(g, clock.elapsedTime));
+    // Once Scene 1 is over the cells have shrunk away; skipping the draw saves ~49k triangles a frame on the standard tier
+    // and ~180k on the high one for the rest of the experience.
+    spin.current.visible = g < CELLS_GONE_G;
   });
 
   const velocities = useMemo(

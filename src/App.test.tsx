@@ -20,19 +20,22 @@ import { tlsContent } from './content/tls';
 
 const preloadScene = vi.fn();
 const clearFailedModels = vi.fn();
+const loadScrollCanvas = vi.fn(async () => ({
+  default: ({ paused }: { paused?: boolean }) => <div data-testid="mock-scroll-canvas" data-paused={String(!!paused)} />,
+}));
 
 async function setUpApp(webglSupported: boolean) {
   preloadScene.mockClear();
+  loadScrollCanvas.mockClear();
   // jsdom can't fetch/decode models; the loader itself is covered in assets/*.test.
-  vi.doMock('./assets/useModel', () => ({ preloadScene, useModel: vi.fn(), clearFailedModels }));
+  vi.doMock('./assets/useModel', () => ({ useModel: vi.fn(), clearFailedModels }));
+  vi.doMock('./assets/preload', () => ({ preloadScene }));
   if (webglSupported) {
     vi.doMock('./hooks', async (importOriginal) => {
       const actual = await importOriginal<typeof import('./hooks')>();
       return { ...actual, useWebGLSupport: () => true };
     });
-    vi.doMock('./engine/ScrollCanvas', () => ({
-      ScrollCanvas: ({ paused }: { paused?: boolean }) => <div data-testid="mock-scroll-canvas" data-paused={String(!!paused)} />,
-    }));
+    vi.doMock('./engine/loadScrollCanvas', () => ({ loadScrollCanvas }));
   }
   const { App } = await import('./App');
   const { useAppStore } = await import('./store/useAppStore');
@@ -52,9 +55,9 @@ describe('App', () => {
   afterEach(() => {
     vi.resetModules();
     vi.doUnmock('./hooks');
-    vi.doUnmock('./engine/ScrollCanvas');
+    vi.doUnmock('./engine/loadScrollCanvas');
     vi.doUnmock('./assets/useModel');
-    vi.doUnmock('@react-three/drei');
+    vi.doUnmock('./assets/preload');
     document.documentElement.removeAttribute('data-theme');
   });
 
@@ -83,7 +86,19 @@ describe('App', () => {
 
     expect(useAppStore.getState().route).toEqual({ kind: 'scene', index: 0 });
     expect(screen.getByTestId('app-shell')).toBeInTheDocument();
-    expect(screen.getByTestId('mock-scroll-canvas')).toBeInTheDocument();
+    expect(await screen.findByTestId('mock-scroll-canvas')).toBeInTheDocument();
+  });
+
+  it('starts fetching the 3D engine while the landing screen is read', async () => {
+    const { App } = await setUpApp(true);
+    render(<App />);
+    expect(loadScrollCanvas).toHaveBeenCalled();
+  });
+
+  it('does not fetch the 3D engine where WebGL is unsupported', async () => {
+    const { App } = await setUpApp(false);
+    render(<App />);
+    expect(loadScrollCanvas).not.toHaveBeenCalled();
   });
 
   it('shows the persistent chrome + scroll canvas when the route is a scene', async () => {
@@ -92,7 +107,7 @@ describe('App', () => {
     const { container } = render(<App />);
 
     expect(screen.getByTestId('app-shell')).toBeInTheDocument();
-    expect(screen.getByTestId('mock-scroll-canvas')).toBeInTheDocument();
+    expect(await screen.findByTestId('mock-scroll-canvas')).toBeInTheDocument();
     const nav = screen.getByRole('navigation', { name: 'Scene navigation' });
     expect(within(nav).getByRole('button', { name: /cascade/i })).toHaveAttribute('aria-current', 'step');
 
@@ -126,7 +141,7 @@ describe('App', () => {
     it('sits over the last scene, which stays mounted behind it', async () => {
       await openEnd();
       expect(screen.getByRole('heading', { level: 1, name: 'Tumor lysis syndrome' })).toBeInTheDocument();
-      expect(screen.getByTestId('mock-scroll-canvas')).toBeInTheDocument();
+      expect(await screen.findByTestId('mock-scroll-canvas')).toBeInTheDocument();
       // No scene chrome on top of the card.
       expect(screen.queryByRole('region', { name: 'Scene caption' })).not.toBeInTheDocument();
       expect(screen.queryByRole('slider')).not.toBeInTheDocument();
@@ -527,15 +542,15 @@ describe('App', () => {
 
     it('pauses the 3D scene while the tab is in the background and resumes it on return', async () => {
       await openScene(2);
-      expect(screen.getByTestId('mock-scroll-canvas')).toHaveAttribute('data-paused', 'false');
+      expect(await screen.findByTestId('mock-scroll-canvas')).toHaveAttribute('data-paused', 'false');
       const setVisibility = (state: string) => {
         Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state });
         document.dispatchEvent(new Event('visibilitychange'));
       };
       await act(async () => setVisibility('hidden'));
-      expect(screen.getByTestId('mock-scroll-canvas')).toHaveAttribute('data-paused', 'true');
+      expect(await screen.findByTestId('mock-scroll-canvas')).toHaveAttribute('data-paused', 'true');
       await act(async () => setVisibility('visible'));
-      expect(screen.getByTestId('mock-scroll-canvas')).toHaveAttribute('data-paused', 'false');
+      expect(await screen.findByTestId('mock-scroll-canvas')).toHaveAttribute('data-paused', 'false');
     });
 
     it('shows a toast with a refresh action for an unexpected error, which closes itself after 8 seconds', async () => {
@@ -582,12 +597,8 @@ describe('App', () => {
     it('a download that stalls for 30 seconds raises a toast with a Retry', async () => {
       vi.useFakeTimers({ shouldAdvanceTime: true });
       try {
-        await openScene(2, () =>
-          vi.doMock('@react-three/drei', async (importOriginal) => {
-            const actual = await importOriginal<typeof import('@react-three/drei')>();
-            return { ...actual, useProgress: () => ({ active: true, progress: 40 }) };
-          }),
-        );
+        const { useAppStore } = await openScene(2);
+        await act(async () => useAppStore.getState().setAssetProgress(true, 40));
         expect(screen.queryByRole('alert')).not.toBeInTheDocument();
         await act(async () => {
           await vi.advanceTimersByTimeAsync(30_100);
@@ -636,7 +647,7 @@ describe('App', () => {
           window.dispatchEvent(new Event('afterprint'));
         });
         expect(screen.queryByTestId('print-document')).not.toBeInTheDocument();
-        expect(screen.getByTestId('mock-scroll-canvas')).toBeInTheDocument();
+        expect(await screen.findByTestId('mock-scroll-canvas')).toBeInTheDocument();
       });
     });
   });
@@ -724,7 +735,7 @@ describe('App', () => {
     describe('text-only mode', () => {
       it('replaces the 3D scene with every step of the scene as text, and brings it back', async () => {
         const { useAppStore } = await openScene(2);
-        expect(screen.getByTestId('mock-scroll-canvas')).toBeInTheDocument();
+        expect(await screen.findByTestId('mock-scroll-canvas')).toBeInTheDocument();
         await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
         expect(screen.queryByTestId('mock-scroll-canvas')).not.toBeInTheDocument();
         const scene = tlsContent.scenes[2];
@@ -732,7 +743,7 @@ describe('App', () => {
         for (const step of scene.steps) expect(within(screen.getByRole('article')).getByText(step.caption)).toBeInTheDocument();
         expect(useAppStore.getState().accessibilityMode).toBe(true);
         await userEvent.click(screen.getByRole('button', { name: 'Text-only mode' }));
-        expect(screen.getByTestId('mock-scroll-canvas')).toBeInTheDocument();
+        expect(await screen.findByTestId('mock-scroll-canvas')).toBeInTheDocument();
       });
 
       it('remembers the choice across a reload', async () => {

@@ -22,6 +22,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   reducedMotion: false,
   accessibilityMode: resolveInitialTextOnly(),
   scrollApi: null,
+  assets: { active: false, progress: 0 },
   toast: null,
 
   jumpToScene(index: number, opts?: { source?: JumpSource; progress?: number }) {
@@ -150,6 +151,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   toggleAccessibilityMode() {
     get().setAccessibilityMode(!get().accessibilityMode);
+  },
+
+  setAssetProgress(active, progress) {
+    const current = get().assets;
+    if (current.active === active && Math.round(current.progress) === Math.round(progress)) return;
+    set({ assets: { active, progress } });
   },
 
   showToast(toast) {

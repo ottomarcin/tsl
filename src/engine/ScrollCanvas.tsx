@@ -3,8 +3,10 @@ import { Canvas } from '@react-three/fiber';
 import { ScrollControls } from '@react-three/drei';
 import { ScrollProgressSync } from './ScrollProgressSync';
 import { Experience } from './Experience';
+import { AssetProgressBridge } from './AssetProgressBridge';
 import { SCENE_COUNT } from '../store/types';
 import { useAppStore } from '../store/useAppStore';
+import { token } from '../lib/tokens';
 
 /**
  * Spec values are key 1.0, rim 0.4, fill 0.2. The models' spec colours are very dark, so the rig is scaled up to keep
@@ -12,7 +14,7 @@ import { useAppStore } from '../store/useAppStore';
  */
 const LIGHT_RIG = { key: 3.5, rim: 1.6, fill: 2.5 } as const;
 
-const FALLBACK_BACKGROUND = { dark: '#0b0e12', light: '#fafaf7' } as const;
+const FALLBACK_BACKGROUND = { dark: token('--bg-canvas', 'dark'), light: token('--bg-canvas', 'light') } as const;
 
 /**
  * An opaque scene background in the page's canvas colour. On a transparent canvas, additive blending also adds alpha,
@@ -36,8 +38,16 @@ function CanvasBackground() {
  */
 export function ScrollCanvas({ viewShift = 0, paused = false }: { viewShift?: number; paused?: boolean }) {
   return (
-    // 'never' stops rendering and the clock's frames while the tab is in the background (design spec §10).
-    <Canvas camera={{ position: [0, 0, 5], fov: 50 }} frameloop={paused ? 'never' : 'always'}>
+    <>
+    {/* 'never' stops rendering and the clock's frames while the tab is in the background (design spec §10). */}
+    <Canvas
+      camera={{ position: [0, 0, 5], fov: 50 }}
+      frameloop={paused ? 'never' : 'always'}
+      // QA hook (dev server only): lets a script read draw calls and triangles from the renderer.
+      onCreated={({ gl }) => {
+        if (import.meta.env.DEV) (window as unknown as { __gl?: unknown }).__gl = gl;
+      }}
+    >
       <CanvasBackground />
       {/* Asset spec §1.5 three-light rig, shared by every scene. */}
       <ambientLight color="#404448" intensity={LIGHT_RIG.fill} />
@@ -48,5 +58,7 @@ export function ScrollCanvas({ viewShift = 0, paused = false }: { viewShift?: nu
         <Experience viewShift={viewShift} />
       </ScrollControls>
     </Canvas>
+    <AssetProgressBridge />
+    </>
   );
 }

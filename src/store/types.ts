@@ -45,6 +45,8 @@ export interface AppState {
   modelQuality: ModelQuality;
   reducedMotion: boolean;
   accessibilityMode: boolean;
+  /** Model downloads: any in progress, and how far (0–100). Written by the 3D engine, which owns the loader. */
+  assets: { active: boolean; progress: number };
   /** The message at the bottom right, if any (one at a time). */
   toast: ToastState | null;
   /** Imperative plumbing to the scroll engine — not app state, never persisted. */
@@ -79,6 +81,7 @@ export interface AppActions {
   toggleAccessibilityMode: () => void;
   registerScrollApi: (api: ScrollApi | null) => void;
   /** Shows a toast; ignored while another one is up. Returns whether it was shown. */
+  setAssetProgress: (active: boolean, progress: number) => void;
   showToast: (toast: Omit<ToastState, 'id'>) => boolean;
   dismissToast: (id?: number) => void;
 }

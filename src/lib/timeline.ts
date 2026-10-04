@@ -1,5 +1,5 @@
 import { sampleCameraPath } from './cameraPath';
-import { KIDNEY_POS } from './cascade';
+import { KIDNEY_POS } from './cascadePositions';
 import { CYTOLYSIS_CAMERA_PATH } from './cytolysis';
 
 /**

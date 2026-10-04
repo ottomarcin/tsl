@@ -1,24 +1,16 @@
 import { CatmullRomCurve3, Vector3 } from 'three';
 import { seededRandom } from './massLayout';
+import { CONVERGENCE_POS, KIDNEY_INLET, POOL_CENTER, POOL_RADIUS, type Vec3 } from './cascadePositions';
 
 /**
  * Scene 2 (the cascade) as pure functions of scene progress: where the three tubes run, when each stream lights up,
  * how calcium is drawn out of its pool, and how crystals drift to the kidney. Only the ambient flow of particles along
  * the tubes is driven by the clock; everything that carries the story replays in reverse when scrolling back.
  */
-export type Vec3 = [number, number, number];
+export type { Vec3 } from './cascadePositions';
 export type StreamId = 'K' | 'PO4' | 'purines';
 
-export const SOURCE_POS: Vec3 = [0, 4.3, 0];
-export const HEART_POS: Vec3 = [-4, -2, 0];
-export const POOL_CENTER: Vec3 = [-0.1, 0.3, 0];
-export const POOL_RADIUS = 0.7;
-export const CONVERGENCE_POS: Vec3 = [0, -3.0, 0];
-/** Where crystals end up: well inside the kidney's upper part, so it reads as the destination, not a spot above it. */
-export const KIDNEY_INLET: Vec3 = [0, -4.6, 0];
-/** Centre of the kidney model (scaled 1.15 => ~3.5 tall). Its top (~-3.7) sits just below where the tubes meet. */
-export const KIDNEY_POS: Vec3 = [0, -5.45, 0];
-
+export { SOURCE_POS, HEART_POS, POOL_CENTER, POOL_RADIUS, CONVERGENCE_POS, KIDNEY_INLET, KIDNEY_POS } from './cascadePositions';
 /** Control points per tube (asset spec §4.2: K short and direct, PO₄ medium, purines long and winding). */
 export const TUBE_POINTS: Record<StreamId, Vec3[]> = {
   K: [
@@ -262,9 +254,10 @@ export function kidneyLoad(progress: number): number {
 
 /**
  * Equivalent progress used under reduced motion: each step shows a still snapshot, with its stream complete. The last
- * stops short of 1 so the crystals are still visible on their way into the kidney (at 1 they are all absorbed).
+ * stops short of 1 so the crystals are still visible on their way into the kidney (at 1 they are all absorbed), and
+ * short of where the camera starts to dive into the kidney (0.8): a still must not be a frame from a transition.
  */
-export const REDUCED_MOTION_PROGRESS = [0.24, 0.49, 0.74, 0.9] as const;
+export const REDUCED_MOTION_PROGRESS = [0.24, 0.49, 0.74, 0.78] as const;
 
 /** Time-driven flow: position of particle j of n on a tube at `time`, as normalised arc length (0–1). */
 export function flowT(j: number, n: number, time: number, traversal: number): number {
