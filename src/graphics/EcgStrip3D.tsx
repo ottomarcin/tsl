@@ -5,6 +5,7 @@ import { MONITOR_COLORS } from '../components/EcgCanvas/EcgCanvas';
 import { useAppStore } from '../store/useAppStore';
 import type { EcgState } from '../lib/ecg';
 import { EcgTrace } from '../lib/ecgTrace';
+import { token } from '../lib/tokens';
 
 export interface EcgStripProps {
   /** Size in scene units. */
@@ -78,5 +79,5 @@ function MonitorMaterial({ texture, getOpacity }: { texture: CanvasTexture | nul
   useFrame(() => {
     if (ref.current) ref.current.opacity = getOpacity();
   });
-  return <meshBasicMaterial ref={(m) => void (ref.current = m)} map={texture} color={texture ? '#ffffff' : '#0B0E12'} transparent opacity={0} toneMapped={false} depthWrite={false} />;
+  return <meshBasicMaterial ref={(m) => void (ref.current = m)} map={texture} color={texture ? '#ffffff' : token('--bg-canvas')} transparent opacity={0} toneMapped={false} depthWrite={false} />;
 }

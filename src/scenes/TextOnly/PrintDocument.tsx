@@ -10,7 +10,7 @@ import styles from './PrintDocument.module.css';
  */
 export function PrintDocument({ endCard = tlsContent.endCard }: { endCard?: EndCardContent }) {
   return (
-    <div className={styles.document} data-testid="print-document">
+    <div className={['paper', styles.document].join(' ')} data-testid="print-document">
       {tlsContent.scenes.map((scene) => (
         <section key={scene.id} className={styles.page}>
           <p className={styles.running}>{endCard.title}</p>

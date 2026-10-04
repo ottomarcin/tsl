@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { ECG_LABELS, type EcgState } from '../../lib/ecg';
 import { EcgTrace } from '../../lib/ecgTrace';
 import styles from './EcgCanvas.module.css';
+import { token, tokenAlpha } from '../../lib/tokens';
 
 export interface EcgCanvasProps {
   state: EcgState;
@@ -26,8 +27,8 @@ export interface MonitorColors {
  * `--monitor-trace`, on the page's own surface colour).
  */
 export const MONITOR_COLORS: Record<'dark' | 'light', MonitorColors> = {
-  dark: { trace: '#5FBF8F', background: '#0B0E12', grid: 'rgba(138, 137, 131, 0.16)' },
-  light: { trace: '#2F8859', background: '#FFFFFF', grid: 'rgba(90, 90, 85, 0.14)' },
+  dark: { trace: token('--monitor-trace', 'dark'), background: token('--bg-canvas', 'dark'), grid: tokenAlpha('--text-muted', 0.16, 'dark') },
+  light: { trace: token('--monitor-trace', 'light'), background: token('--bg-surface', 'light'), grid: tokenAlpha('--text-muted', 0.14, 'light') },
 };
 
 /**

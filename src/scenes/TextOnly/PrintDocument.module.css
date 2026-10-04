@@ -1,12 +1,5 @@
-/* Paper is light: the tokens are redefined here so the text view prints dark on white whichever theme is on screen. */
+/* Paper is light: the global .paper class (tokens.css) redefines the palette so it prints dark on white. */
 .document {
-  --bg-canvas: #fff;
-  --bg-surface: #fff;
-  --text-primary: #111;
-  --text-secondary: #333;
-  --text-muted: #555;
-  --border-subtle: #bbb;
-  --monitor-trace: #111;
   /* Paper sizes: the whole experience is long, so the text is set smaller than on screen. */
   --font-size-body: 10pt;
   --line-height-body: 14pt;
@@ -17,8 +10,8 @@
   --font-size-mono-sm: 8.5pt;
   --font-size-display-lg: 18pt;
   --space-6: 0;
-  background: #fff;
-  color: #111;
+  background: var(--bg-canvas);
+  color: var(--text-primary);
 }
 
 .page {
@@ -39,7 +32,7 @@
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #555;
+  color: var(--text-muted);
 }
 
 .footer {
@@ -48,11 +41,11 @@
   margin: 8px auto 0;
   padding: 0 24px;
   font-size: 11px;
-  color: #555;
+  color: var(--text-muted);
 }
 
 .page a {
-  color: #111;
+  color: var(--text-primary);
 }
 
 @page {

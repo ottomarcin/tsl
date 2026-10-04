@@ -9,13 +9,14 @@ import { liftEmissive } from '../../graphics/emissive';
 import { MAX_PULSES, POSES, erraticLevel, nervePulses, panelFocus, poseWeights } from '../../lib/systemic';
 import { HAND_CENTER_Y } from './layout';
 import type { Scene4Getters } from './shared';
+import { token } from '../../lib/tokens';
 
 export interface HandPanelProps extends Scene4Getters {
   label: string;
   annotation: string;
 }
 
-const NERVE_GREEN = new Color('#5FBF8F');
+const NERVE_GREEN = new Color(token('--monitor-trace'));
 
 /** Uniforms shared with the nerve material: where the travelling pulses are along the arm, and how bright. */
 interface NerveUniforms {

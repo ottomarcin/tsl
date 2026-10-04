@@ -4,6 +4,7 @@ import { Color, DoubleSide, MeshStandardMaterial, Vector3 } from 'three';
 import { MAX_LODGES, lodgedPoints, obstructionLevel, overlayStrength, type InflowCrystal } from '../../lib/renal';
 import { useModelClone } from '../Scene2/useModelClone';
 import type { Scene3Getters } from './shared';
+import { token } from '../../lib/tokens';
 
 export interface NephronTubeProps extends Scene3Getters {
   crystals: InflowCrystal[];
@@ -21,7 +22,7 @@ interface WallUniforms {
 
 const NARROW = 0.1;
 const FALLOFF = 0.5;
-const CYTO_RED = new Color('#D85A30');
+const CYTO_RED = new Color(token('--flag-red'));
 
 /**
  * Fragments on the camera's side of the tube's axis are discarded, so both the outer shell and the inner wall are cut

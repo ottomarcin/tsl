@@ -8,6 +8,7 @@ import { buildPathLut, lutPoint, type Vec3 } from '../../lib/cascade';
 import { feedbackStrength } from '../../lib/renal';
 import { useModelClone } from '../Scene2/useModelClone';
 import type { Scene3Getters } from './shared';
+import { token } from '../../lib/tokens';
 
 export interface FeedbackLoopProps extends Scene3Getters {
   color: string;
@@ -26,7 +27,7 @@ const LOOP: Vec3[] = [
   [-0.9, -3.0, 0],
   [0.6, -3.45, 0],
 ];
-const RED = new Color('#D85A30');
+const RED = new Color(token('--flag-red'));
 
 /**
  * The vicious cycle (step 3.4): a red trail looping from the injured tubule back toward the labs, with an arrowhead and

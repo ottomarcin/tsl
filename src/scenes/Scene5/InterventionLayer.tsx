@@ -9,6 +9,7 @@ import { badgesShown, isOn, scene5Step, type InterventionEffects } from '../../l
 import { useAppStore } from '../../store/useAppStore';
 import { activeInterventions } from '../shared/scene5State';
 import { tlsInterventions } from '../../content/tls/interventions';
+import { token } from '../../lib/tokens';
 
 export interface InterventionLayerProps {
   getG: () => number;
@@ -52,8 +53,9 @@ function Badge({ spec, getG, getPresence, light, compact }: { spec: BadgeSpec; g
   const ring = useRef<MeshBasicMaterial>(null);
   const shown = useRef(0);
   const active = useRef(0);
-  const ink = light ? '#2A2722' : '#F4F1EA';
-  const fill = light ? '#FFFFFF' : '#0B0E12';
+  const theme = light ? 'light' : 'dark';
+  const ink = token('--intervention', theme);
+  const fill = token(light ? '--bg-surface' : '--bg-canvas', theme);
 
   useFrame((_, delta) => {
     const g = getG();
@@ -116,7 +118,7 @@ export function InterventionLayer({ getG, getPresence, getEffects, reducedMotion
   const light = useAppStore((s) => s.theme === 'light');
   const compact = useThree((s) => s.size.width < 768);
   const circuit = useMemo(() => buildPathLut([...CIRCUIT, CIRCUIT[0]], 96), []);
-  const color = useMemo(() => new Color(light ? '#2F8859' : '#5FBF8F').getStyle(), [light]);
+  const color = useMemo(() => new Color(token('--monitor-trace', light ? 'light' : 'dark')).getStyle(), [light]);
   const getCircuitPresence = () => getEffects().dialysis * getPresence();
   return (
     <>

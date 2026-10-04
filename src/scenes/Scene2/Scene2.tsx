@@ -28,6 +28,7 @@ import { CalciumPool } from './CalciumPool';
 import { CrystalFlow } from './CrystalFlow';
 import { HeartIcon, Kidney } from './Organs';
 import { Waypoints } from './Waypoints';
+import { token } from '../../lib/tokens';
 
 export interface Scene2Props {
   reducedMotion?: boolean;
@@ -103,7 +104,7 @@ export function Scene2({ reducedMotion = false }: Scene2Props) {
 
       <PathLine
         lut={tail}
-        color={light ? '#847A60' : '#8E8670'}
+        color={light ? token('--crystal', 'light') : '#8E8670'}
         getReveal={() => convergence(getProgress())}
         getEmphasis={() => 0.45}
         showBase={false}

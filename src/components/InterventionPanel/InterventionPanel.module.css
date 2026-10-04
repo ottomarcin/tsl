@@ -144,7 +144,7 @@
 
 .labs th,
 .labs td {
-  padding: 3px 0;
+  padding: var(--space-1) 0;
   text-align: left;
   font-weight: 400;
   white-space: nowrap;

@@ -6,6 +6,7 @@ import type { CascadeWaypoint } from '../../content/schema';
 import { getTubeLuts, lutPoint, streamReveal, type Vec3 } from '../../lib/cascade';
 import { useModelClone } from './useModelClone';
 import type { ProgressProps } from './Organs';
+import { token } from '../../lib/tokens';
 
 export interface WaypointsProps extends ProgressProps {
   getPresence: () => number;
@@ -17,8 +18,8 @@ export interface WaypointsProps extends ProgressProps {
   getAlwaysShown?: () => boolean;
 }
 
-const PURINE = new Color('#9B6BD4');
-const ENZYME = new Color('#5FBF8F');
+const PURINE = new Color(token('--mol-purines'));
+const ENZYME = new Color(token('--monitor-trace'));
 
 function Marker({
   waypoint,

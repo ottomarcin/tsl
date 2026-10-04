@@ -7,6 +7,7 @@ import { useFade } from '../shared/useFade';
 import { useModelClone } from './useModelClone';
 import { useRef } from 'react';
 import { useAppStore } from '../../store/useAppStore';
+import { token } from '../../lib/tokens';
 
 export interface ProgressProps {
   /** Progress through the cascade scene (0–1). */
@@ -19,7 +20,7 @@ export interface PresenceProps {
   getPresence: () => number;
 }
 
-const AMBER = new Color('#E8A23D');
+const AMBER = new Color(token('--flag-amber'));
 
 /** Stylised heart at the end of the K⁺ tube: pulses at a resting rate, flushes amber as potassium arrives. */
 export function HeartIcon({ getProgress, getPresence, reducedMotion, label }: ProgressProps & PresenceProps & { label: string }) {
@@ -59,7 +60,7 @@ export function Kidney({
 }: Pick<ProgressProps, 'getProgress'> & PresenceProps & { label: string; getLoadScale?: () => number }) {
   const { root, materials } = useModelClone('kidney');
   const rest = useRef(materials.map(captureEmissive));
-  const GLOW = useRef(new Color('#C9C0A8'));
+  const GLOW = useRef(new Color(token('--crystal')));
   const light = useAppStore((st) => st.theme === 'light');
   const group = useRef<Group>(null);
   // The file is 50% translucent so crystals can be seen entering it; on the pale canvas that washes it to lavender mist.

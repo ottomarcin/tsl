@@ -16,6 +16,7 @@ import { Histone } from './Histone';
 import { NephronTube } from './NephronTube';
 import { ArterioleLabel, Vessels } from './Vessels';
 import type { Scene3Getters } from './shared';
+import { token } from '../../lib/tokens';
 
 export interface Scene3Props {
   reducedMotion?: boolean;
@@ -80,7 +81,7 @@ export function Scene3({ reducedMotion = false }: Scene3Props) {
       <ScenePointLabel position={[-5.7, 1.35, 0]} text="Outflow" color="var(--text-muted)" subtle getOpacity={getPresence} />
       <ArterioleLabel position={[5.55, -3.7, 0]} getMechanism={getMechanism} getProgress={getProgress} />
       <ModelBoundary>
-        <FeedbackLoop color={light ? '#A33D1F' : '#D85A30'} blend={blend} caption={FEEDBACK_CAPTION} {...getters} />
+        <FeedbackLoop color={token('--flag-red', light ? 'light' : 'dark')} blend={blend} caption={FEEDBACK_CAPTION} {...getters} />
       </ModelBoundary>
     </group>
   );

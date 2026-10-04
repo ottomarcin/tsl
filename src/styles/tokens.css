@@ -29,15 +29,18 @@
   --mol-K: #e8a23d;
   --mol-PO4: #4a9fd8;
   --mol-Ca: #d8d4c8;
-  --mol-purines: #9b6bd4;
+  --mol-purines: #a275d7;
   --crystal: #c9c0a8;
 
   /* Color — semantic */
   --monitor-trace: #5fbf8f;
   --flag-amber: #e8a23d;
-  --flag-red: #d85a30;
+  --flag-red: #db6841;
   --intervention: #f4f1ea;
   --focus-ring: #5fbf8f;
+
+  /* Elevation — shadow */
+  --shadow-toast: 0 8px 24px rgba(0, 0, 0, 0.35);
 
   /* Spacing (4-pt base) */
   --space-0: 0;
@@ -106,20 +109,20 @@
 
   --text-primary: #1a1a19;
   --text-secondary: #5a5a55;
-  --text-muted: #8a8983;
+  --text-muted: #6e6d67;
   --text-disabled: #b5b3ac;
 
-  --mol-K: #b8771e;
+  --mol-K: #976219;
   --mol-PO4: #2a6a9d;
   --mol-Ca: #8a8678;
   --mol-purines: #6c40a8;
   --crystal: #847a60;
 
-  --monitor-trace: #2f8859;
-  --flag-amber: #b8771e;
+  --monitor-trace: #2a7b50;
+  --flag-amber: #976219;
   --flag-red: #a33d1f;
   --intervention: #2a2722;
-  --focus-ring: #2f8859;
+  --focus-ring: #2a7b50;
 }
 
 /* Mobile type-scale overrides, §3.2.3 */
@@ -134,4 +137,15 @@
     --font-size-body-lg: 16px;
     --line-height-body-lg: 24px;
   }
+}
+
+/* Paper (print): a fixed light palette whatever the theme on screen; used by the print version only. */
+.paper {
+  --bg-canvas: #ffffff;
+  --bg-surface: #ffffff;
+  --text-primary: #111111;
+  --text-secondary: #333333;
+  --text-muted: #555555;
+  --border-subtle: #bbbbbb;
+  --monitor-trace: #111111;
 }

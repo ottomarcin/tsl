@@ -9,11 +9,12 @@ import { useAppStore } from '../../store/useAppStore';
 import { useModelClone } from '../Scene2/useModelClone';
 import { useFade } from '../shared/useFade';
 import type { Scene4Getters } from './shared';
+import { token } from '../../lib/tokens';
 
 const AMBER = new Color('#F0D8A0');
-const RED = new Color('#D85A30');
-const GREEN = '#5FBF8F';
-const RED_HEX = '#D85A30';
+const RED = new Color(token('--flag-red'));
+const GREEN = token('--monitor-trace');
+const RED_HEX = token('--flag-red');
 
 /** A thread that drops from the origin and then sweeps out to the top of its panel. */
 function threadPath(from: Vec3, to: Vec3, via?: Vec3[]): Vec3[] {
@@ -44,7 +45,7 @@ export function Origin({ getProgress, getPresence, reducedMotion, spec }: Scene4
   useEffect(() => {
     materials.forEach((m) => {
       if (light) {
-        m.color.set('#B8771E');
+        m.color.set(token('--flag-amber', 'light'));
         m.opacity = 1;
       } else {
         m.color.set('#E8B866');
@@ -69,7 +70,7 @@ export function Origin({ getProgress, getPresence, reducedMotion, spec }: Scene4
   const red = () => criticalLevel(getProgress());
   const lines = (which: 'heart' | 'hand') => (
     <>
-      <PathLine lut={luts[which]} color={light ? '#2F8859' : GREEN} getReveal={reach} getEmphasis={green} getPresence={getPresence} showBase={false} dashed={false} blend="normal" />
+      <PathLine lut={luts[which]} color={light ? token('--monitor-trace', 'light') : GREEN} getReveal={reach} getEmphasis={green} getPresence={getPresence} showBase={false} dashed={false} blend="normal" />
       <PathLine lut={luts[which]} color={RED_HEX} getReveal={reach} getEmphasis={red} getPresence={getPresence} showBase={false} dashed={false} blend="normal" />
       {!reducedMotion && (
         <FlowStream lut={luts[which]} count={4} traversal={3} color={GREEN} getReveal={reach} getEmphasis={green} getPresence={getPresence} size={0.22} blend="normal" />
