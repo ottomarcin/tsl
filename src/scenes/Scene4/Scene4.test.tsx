@@ -6,6 +6,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { SCENE4_OFFSET } from '../../lib/timeline';
 import { POSES } from '../../lib/systemic';
 import { SYSTEMIC_LAYOUTS } from './layout';
+import { HAND_TURN, handView } from './handView';
 
 const useModel = vi.fn();
 vi.mock('../../assets/useModel', () => ({ useModel: (...args: unknown[]) => useModel(...args), preloadScene: vi.fn() }));
@@ -194,3 +195,46 @@ describe('systemic layouts', () => {
     }
   });
 });
+
+describe('Scene4: the close-up on Trousseau\'s sign', () => {
+  const named = (renderer: Awaited<ReturnType<typeof ReactThreeTestRenderer.create>>, name: string) => renderer.scene.findAll((n) => n.instance.name === name)[0].instance as Group;
+
+  it('keeps the hand as laid out until the spasm reaches the screen', async () => {
+    const renderer = await ReactThreeTestRenderer.create(<Scene4 />);
+    await setP(renderer, 0.3);
+    const spec = SYSTEMIC_LAYOUTS.side;
+    expect(named(renderer, 'hand-turn').rotation.y).toBe(0);
+    expect(named(renderer, 'hand-pivot').scale.x).toBeCloseTo(spec.hand.scale, 9);
+  });
+
+  it('turns the hand to its thumb side and grows it as the scroll goes into the spasm, and holds through step 4.4', async () => {
+    const renderer = await ReactThreeTestRenderer.create(<Scene4 />);
+    const spec = SYSTEMIC_LAYOUTS.side;
+    let lastScale = 0;
+    for (const p of [0.62, 0.68, 0.74, 0.8, 0.85]) {
+      await setP(renderer, p);
+      const view = handView(p, spec);
+      expect(named(renderer, 'hand-turn').rotation.y).toBeCloseTo(view.turn, 9);
+      expect(named(renderer, 'hand-pivot').scale.x).toBeCloseTo(view.scale, 9);
+      expect(named(renderer, 'hand-pivot').position.y).toBeCloseTo(view.pivot[1], 9);
+      expect(view.scale).toBeGreaterThanOrEqual(lastScale);
+      lastScale = view.scale;
+    }
+    expect(named(renderer, 'hand-turn').rotation.y).toBeCloseTo(HAND_TURN, 9);
+    expect(named(renderer, 'hand-pivot').scale.x).toBeCloseTo(spec.hand.scale * spec.hand.zoom, 9);
+  });
+
+  it('turns back when scrolling back out of it', async () => {
+    const renderer = await ReactThreeTestRenderer.create(<Scene4 />);
+    await setP(renderer, 0.85);
+    await setP(renderer, 0.4);
+    expect(named(renderer, 'hand-turn').rotation.y).toBe(0);
+  });
+
+  it('works in the stacked layout of a phone too', async () => {
+    const renderer = await ReactThreeTestRenderer.create(<Scene4 layout="stacked" />);
+    await setP(renderer, 0.85);
+    expect(named(renderer, 'hand-pivot').scale.x).toBeCloseTo(SYSTEMIC_LAYOUTS.stacked.hand.scale * SYSTEMIC_LAYOUTS.stacked.hand.zoom, 9);
+  });
+});
+

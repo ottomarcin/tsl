@@ -50,6 +50,15 @@ export function dominantPose(progress: number): PoseName {
   return POSES.reduce((best, p) => (w[p] > w[best] ? p : best), POSES[0]);
 }
 
+/**
+ * The close-up on Trousseau's sign as the hand reaches the spasm: first the hand turns to show its thumb side (the
+ * adducted thumb and the cupped fingers read best in profile), then the view moves in. Both stay at their end values
+ * through step 4.4. 0 = the hand as it was, 1 = turned / zoomed in.
+ */
+export function handCloseUp(progress: number): { turn: number; zoom: number } {
+  return { turn: smooth(clamp01((progress - 0.6) / 0.12)), zoom: smooth(clamp01((progress - 0.66) / 0.14)) };
+}
+
 /** 0 = nerves conduct regularly, 1 = erratic firing (low calcium). */
 export function erraticLevel(progress: number): number {
   return smooth(clamp01((progress - 0.58) / 0.16));
