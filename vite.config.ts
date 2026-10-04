@@ -3,6 +3,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
+  // Served from a subfolder on GitHub Pages: the deploy workflow sets VITE_BASE=/tsl/.
+  base: process.env.VITE_BASE ?? '/',
   plugins: [react()],
   test: {
     environment: 'jsdom',
